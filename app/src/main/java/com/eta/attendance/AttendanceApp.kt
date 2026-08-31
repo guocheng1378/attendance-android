@@ -62,7 +62,7 @@ fun AttendanceApp() {
 
 @Composable
 private fun AttendanceScreen() {
-    val backStack = rememberNavBackstack<Route>(Route.CheckIn)
+    val backStack = rememberNavBackStack<Route>(Route.CheckIn)
     val navController = remember { NavController(backStack) }
     val c = LocalAppColors.current
     val backdropBg = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
