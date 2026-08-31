@@ -44,21 +44,22 @@ object Config {
     private const val KEY_SB_URL = "supabase_url"
     private const val KEY_SB_KEY = "supabase_key"
     private const val KEY_AUTO_BACKUP = "auto_backup"
+    private const val KEY_EMP_SEED = "emp_seed"
+    private const val EMP_SEED_VERSION = 2
 
     private val DEFAULT_EMPLOYEES = listOf(
-        Employee(1, "ແຫນ", "盘"),
-        Employee(2, "ນ້ອຍ", "姆"),
-        Employee(3, "ນົວ", "松"),
-        Employee(4, "ບາ", "巴"),
-        Employee(5, "ເອົາ", "糖"),
-        Employee(6, "ແກ້ວ", "乐昂"),
-        Employee(7, "ອິ", "文"),
-        Employee(8, "ຕົວ", "米"),
-        Employee(9, "ແພງ", "挽"),
-        Employee(10, "ຄຳ", "春"),
-        Employee(11, "ແນນ", "研"),
-        Employee(12, "ດາວ", "孙"),
-        Employee(13, "ຕາວ", "罗"),
+        Employee(1, "โชน", "盘", monthlyBase = 4500000.0, bonus = 0.0),
+        Employee(2, "มู", "姆", monthlyBase = 4000000.0, bonus = 500000.0),
+        Employee(3, "รິม", "松", monthlyBase = 4000000.0, bonus = 0.0),
+        Employee(4, "บາว", "巴", monthlyBase = 4000000.0, bonus = 0.0),
+        Employee(5, "ຊຽง", "恩", monthlyBase = 4000000.0, bonus = 0.0),
+        Employee(6, "ຈຽง", "乐昂", monthlyBase = 4000000.0, bonus = 0.0),
+        Employee(7, "เบ້ณ", "文", monthlyBase = 4000000.0, bonus = 0.0),
+        Employee(8, "ตົง", "米", monthlyBase = 4000000.0, bonus = 0.0),
+        Employee(9, "ຈຽง", "抏", monthlyBase = 4500000.0, bonus = 500000.0),
+        Employee(10, "กິນ", "春", monthlyBase = 4500000.0, bonus = 500000.0),
+        Employee(11, "คຽง", "研", monthlyBase = 4000000.0, bonus = 300000.0),
+        Employee(12, "มົว", "罗", monthlyBase = 4000000.0, bonus = 0.0),
     )
 
     /** 兼容旧代码的默认名单 */
@@ -146,6 +147,11 @@ object Config {
 
     // 员工名单（可持久化增删改）
     fun employees(c: Context): List<Employee> {
+        if (sp(c).getInt(KEY_EMP_SEED, 0) < EMP_SEED_VERSION) {
+            saveEmployees(c, DEFAULT_EMPLOYEES)
+            sp(c).edit().putInt(KEY_EMP_SEED, EMP_SEED_VERSION).apply()
+            return DEFAULT_EMPLOYEES
+        }
         val raw = sp(c).getString(KEY_EMPLOYEES, null) ?: return DEFAULT_EMPLOYEES
         return runCatching {
             val arr = JSONArray(raw)
@@ -175,10 +181,10 @@ object Config {
         sp(c).edit().putString(KEY_EMPLOYEES, arr.toString()).apply()
     }
 
-    fun addEmployee(c: Context, nameLo: String, nameZh: String, monthly: Double): Int {
+    fun addEmployee(c: Context, nameLo: String, nameZh: String, monthly: Double, bonus: Double = 0.0): Int {
         val list = employees(c).toMutableList()
         val id = (list.maxOfOrNull { it.id } ?: 0) + 1
-        list.add(Employee(id, nameLo.trim(), nameZh.trim(), "", 0.0, monthly, 0.0, 0.0))
+        list.add(Employee(id, nameLo.trim(), nameZh.trim(), "", 0.0, monthly, bonus, 0.0))
         saveEmployees(c, list)
         return id
     }

@@ -78,27 +78,37 @@ internal fun GlassBackground() {
     val p = c.palette
     val dim = if (c.isDark) 0.45f else 1f
     fun d(col: Color) = col.copy(alpha = col.alpha * dim)
+    val mono = p.id == "mono"
+    val bgCols = if (mono) {
+        if (c.isDark) listOf(Color(0xFF0B0B0B), Color(0xFF000000), Color(0xFF131313))
+        else listOf(Color(0xFFFFFFFF), Color(0xFFF4F4F4), Color(0xFFE7E7E7))
+    } else listOf(d(p.bgTop), d(p.bgMid), d(p.bgBottom))
     Box(Modifier.fillMaxSize()) {
         Box(
-            Modifier.fillMaxSize().background(
-                Brush.verticalGradient(listOf(d(p.bgTop), d(p.bgMid), d(p.bgBottom)))
+            Modifier.fillMaxSize().background(Brush.verticalGradient(bgCols))
+        )
+        if (!mono) {
+            Box(
+                Modifier.size(300.dp).align(Alignment.TopStart)
+                    .offset(x = (-100).dp, y = (-60).dp)
+                    .background(Brush.radialGradient(listOf(p.glowA.copy(alpha = 0.4f * dim), Color.Transparent)))
             )
-        )
-        Box(
-            Modifier.size(300.dp).align(Alignment.TopStart)
-                .offset(x = (-100).dp, y = (-60).dp)
-                .background(Brush.radialGradient(listOf(p.glowA.copy(alpha = 0.4f * dim), Color.Transparent)))
-        )
-        Box(
-            Modifier.size(280.dp).align(Alignment.CenterEnd)
-                .offset(x = (-60).dp, y = (-140).dp)
-                .background(Brush.radialGradient(listOf(p.glowB.copy(alpha = 0.33f * dim), Color.Transparent)))
-        )
-        Box(
-            Modifier.size(340.dp).align(Alignment.BottomStart)
-                .offset(x = (-140).dp, y = 80.dp)
-                .background(Brush.radialGradient(listOf(p.accent.copy(alpha = 0.33f * dim), Color.Transparent)))
-        )
+            Box(
+                Modifier.size(280.dp).align(Alignment.CenterEnd)
+                    .offset(x = (-60).dp, y = (-140).dp)
+                    .background(Brush.radialGradient(listOf(p.glowB.copy(alpha = 0.33f * dim), Color.Transparent)))
+            )
+            Box(
+                Modifier.size(340.dp).align(Alignment.BottomStart)
+                    .offset(x = (-140).dp, y = 80.dp)
+                    .background(Brush.radialGradient(listOf(p.accent.copy(alpha = 0.33f * dim), Color.Transparent)))
+            )
+        } else {
+            Box(
+                Modifier.size(320.dp).align(Alignment.Center)
+                    .background(Brush.radialGradient(listOf(Color.Gray.copy(alpha = 0.10f * dim), Color.Transparent)))
+            )
+        }
         Box(
             Modifier.size(180.dp).align(Alignment.CenterStart)
                 .background(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.26f * dim), Color.Transparent)))

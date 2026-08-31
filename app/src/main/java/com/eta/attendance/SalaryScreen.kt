@@ -55,14 +55,14 @@ internal fun SalaryPanel2() {
     val totalGross = pays.sumOf { it.gross }
     val totalAdv = pays.sumOf { it.advance }
     val totalNet = pays.sumOf { it.net }
-    val accent = c.palette.accent
+    val accent = if (c.palette.id == "mono") c.textPrimary else c.palette.accent
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
             .padding(16.dp).padding(bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("考勤工资核算", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Text("考勤工资核算", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
 
         // 月份切换
         GlassCard(Modifier.fillMaxWidth()) {
@@ -72,14 +72,14 @@ internal fun SalaryPanel2() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 GlassButton("‹", modifier = Modifier.width(56.dp)) { ym = shiftYm(ym, -1) }
-                Text(ymLabel(ym), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(ymLabel(ym), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
                 GlassButton("›", modifier = Modifier.width(56.dp)) { ym = shiftYm(ym, 1) }
             }
         }
 
         // 全员总工资（先出总额）
         GlassCard(Modifier.fillMaxWidth()) {
-            Text("本月全员实发合计", fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f))
+            Text("本月全员实发合计", fontSize = 13.sp, color = c.textPrimary.copy(alpha = 0.85f))
             Text("${totalNet.toLong()} LAK", fontSize = 34.sp, fontWeight = FontWeight.Bold, color = accent)
             Spacer(Modifier.height(10.dp))
             SumRow("应发合计", "${totalGross.toLong()} LAK")
@@ -102,19 +102,20 @@ internal fun SalaryPanel2() {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(p.nameZh.ifBlank { p.nameLo }, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(p.nameZh.ifBlank { p.nameLo }, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
                         Text(
                             "出勤 ${fmtNum(p.attend)} / 应出勤 ${p.expectedDays} 天（${p.fullDays}全 ${p.halfDays}半 ${p.absentDays}缺）",
-                            fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f)
+                            fontSize = 12.sp, color = c.textPrimary.copy(alpha = 0.8f)
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text("${p.net.toLong()}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = accent)
-                        Text("实发 LAK", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                        Text("实发 LAK", fontSize = 11.sp, color = c.textPrimary.copy(alpha = 0.7f))
                     }
                 }
                 Spacer(Modifier.height(8.dp))
                 SumRow("月薪", "${p.monthly.toLong()} LAK")
+                SumRow("奖金", "${p.bonus.toLong()} LAK")
                 if (p.penaltyDays > 0) SumRow("扣减（${p.penaltyDays} 天）", "-${p.penalty.toLong()} LAK", neg = true)
                 SumRow("应发", "${p.gross.toLong()} LAK")
                 Spacer(Modifier.height(8.dp))
@@ -147,8 +148,8 @@ internal fun SalaryPanel2() {
         }
 
         Text(
-            "规则：应出勤=当月天数−${SalaryEngine.FREE_DAYS}；出勤折算=全天×1+半天×0.5；一天工资=月薪÷应出勤；出勤<应出勤扣1天、<应出勤÷2扣2天；实发=月薪−扣减−预支。",
-            fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f)
+            "规则：一天工资=(月薪+奖金)÷当月天数；应出勤=当月天数−${SalaryEngine.FREE_DAYS}；出勤折算=全天×1+半天×0.5；出勤<应出勤扣1天、<应出勤÷2扣2天；实发=(月薪+奖金)−扣减−预支。",
+            fontSize = 11.sp, color = c.textPrimary.copy(alpha = 0.7f)
         )
     }
 }
@@ -184,12 +185,12 @@ private fun shiftYm(ym: String, dir: Int): String {
 }
 
 private fun exportMonth(context: Context, ym: String, pays: List<MonthPay>) {
-    val sb = StringBuilder("姓名,全天,半天,缺勤,出勤折算,应出勤,月薪,扣减天,扣减,应发,预支,实发,备注\n")
+    val sb = StringBuilder("姓名,全天,半天,缺勤,出勤折算,应出勤,月薪,奖金,扣减天,扣减,应发,预支,实发,备注\n")
     pays.forEach { p ->
         sb.append(csvEsc(p.nameZh)).append(',')
             .append(p.fullDays).append(',').append(p.halfDays).append(',').append(p.absentDays).append(',')
             .append(fmtNum(p.attend)).append(',').append(p.expectedDays).append(',')
-            .append(p.monthly.toLong()).append(',').append(p.penaltyDays).append(',').append(p.penalty.toLong()).append(',')
+            .append(p.monthly.toLong()).append(',').append(p.bonus.toLong()).append(',').append(p.penaltyDays).append(',').append(p.penalty.toLong()).append(',')
             .append(p.gross.toLong()).append(',').append(p.advance.toLong()).append(',').append(p.net.toLong()).append(',')
             .append(csvEsc(p.remark)).append('\n')
     }

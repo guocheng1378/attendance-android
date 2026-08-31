@@ -295,19 +295,19 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column {
-                Text(context.getString(R.string.app_name), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(context.getString(R.string.app_subtitle), fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f))
+                Text(context.getString(R.string.app_name), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+                Text(context.getString(R.string.app_subtitle), fontSize = 13.sp, color = c.textPrimary.copy(alpha = 0.85f))
             }
             GlassIconButton(MiuixIcons.Settings, onOpenSettings)
         }
         Spacer(Modifier.height(20.dp))
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             if (isToday) {
-                Text(timeStr, fontSize = 46.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("$selDate · " + context.getString(if (lateNow) R.string.late else R.string.on_time), fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f))
+                Text(timeStr, fontSize = 46.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+                Text("$selDate · " + context.getString(if (lateNow) R.string.late else R.string.on_time), fontSize = 14.sp, color = c.textPrimary.copy(alpha = 0.9f))
             } else {
-                Text(selDate, fontSize = 34.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(context.getString(R.string.backfill_mode), fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f))
+                Text(selDate, fontSize = 34.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+                Text(context.getString(R.string.backfill_mode), fontSize = 14.sp, color = c.textPrimary.copy(alpha = 0.9f))
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -316,14 +316,14 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
             GlassButton("‹", modifier = Modifier.width(56.dp)) { selDate = shiftDate(selDate, -1) }
             Text(
                 if (isToday) "今天" else selDate,
-                fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                fontSize = 15.sp, fontWeight = FontWeight.Bold, color = c.textPrimary,
                 modifier = Modifier.clickable { showDatePicker = true }
             )
             GlassButton("›", modifier = Modifier.width(56.dp)) { if (selDate < today) selDate = shiftDate(selDate, 1) }
         }
         Spacer(Modifier.height(16.dp))
-        Text(context.getString(R.string.tap_name_hint), fontSize = 14.sp, color = Color.White)
-        Text(context.getString(R.string.record_count_fmt, AttendanceStore.all(context).size), fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
+        Text(context.getString(R.string.tap_name_hint), fontSize = 14.sp, color = c.textPrimary)
+        Text(context.getString(R.string.record_count_fmt, AttendanceStore.all(context).size), fontSize = 12.sp, color = c.textPrimary.copy(alpha = 0.7f))
         Spacer(Modifier.height(8.dp))
         // 全选按钮横向滚动
         Row(
@@ -397,7 +397,7 @@ private fun StatsPanel() {
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
             .padding(16.dp).padding(bottom = 24.dp)
     ) {
-        Text(context.getString(R.string.month_summary), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Text(context.getString(R.string.month_summary), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
         Spacer(Modifier.height(16.dp))
         // 月份导航
         GlassCard(Modifier.fillMaxWidth()) {
@@ -496,7 +496,7 @@ private fun SettingsPanel() {
             .padding(16.dp).padding(bottom = 24.dp)
     ) {
         if (sub == 0) {
-            Text(context.getString(R.string.tab_settings), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(context.getString(R.string.tab_settings), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
             Spacer(Modifier.height(16.dp))
             SettingEntry(context.getString(R.string.settings_appearance), context.getString(R.string.settings_appearance_desc)) { sub = 1 }
             SettingEntry(context.getString(R.string.settings_attendance), context.getString(R.string.settings_attendance_desc)) { sub = 2 }
@@ -507,7 +507,7 @@ private fun SettingsPanel() {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 GlassButton("← 返回", modifier = Modifier.width(100.dp)) { sub = 0 }
                 Spacer(Modifier.width(12.dp))
-                Text(when (sub) { 1 -> context.getString(R.string.settings_appearance); 2 -> context.getString(R.string.settings_attendance); 3 -> context.getString(R.string.settings_salary); else -> context.getString(R.string.settings_data) }, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(when (sub) { 1 -> context.getString(R.string.settings_appearance); 2 -> context.getString(R.string.settings_attendance); 3 -> context.getString(R.string.settings_salary); else -> context.getString(R.string.settings_data) }, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
             }
             Spacer(Modifier.height(16.dp))
             when (sub) {
@@ -619,12 +619,12 @@ private fun SettingsPanel() {
         GlassCard(Modifier.fillMaxWidth()) {
             Text("工资规则", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
             Spacer(Modifier.height(8.dp))
-            Text("• 仅按月薪计薪，无日薪/加班/补贴/奖金/扣款", fontSize = 13.sp, color = c.textSecondary)
+            Text("• 计薪基数 = 月薪 + 奖金（无日薪/加班/扣款）", fontSize = 13.sp, color = c.textSecondary)
             Text("• 应出勤天数 = 当月总天数 − 2", fontSize = 13.sp, color = c.textSecondary)
             Text("• 出勤折算 = 全天×1 + 半天×0.5", fontSize = 13.sp, color = c.textSecondary)
             Text("• 出勤 < 应出勤：扣 1 天工资；出勤 < 应出勤÷2：扣 2 天工资", fontSize = 13.sp, color = c.textSecondary)
-            Text("• 一天工资 = 月薪 ÷ 应出勤天数", fontSize = 13.sp, color = c.textSecondary)
-            Text("• 实发 = 月薪 − 扣减 − 当月预支", fontSize = 13.sp, color = c.textSecondary)
+            Text("• 一天工资 = (月薪 + 奖金) ÷ 当月天数", fontSize = 13.sp, color = c.textSecondary)
+            Text("• 实发 = (月薪 + 奖金) − 扣减 − 当月预支", fontSize = 13.sp, color = c.textSecondary)
         }
         Spacer(Modifier.height(12.dp))
 
@@ -835,6 +835,7 @@ private fun EmployeeEditor(context: Context) {
     val c = LocalAppColors.current
     var base by remember { mutableStateOf(Config.employees(context)) }
     val mbMap = remember { mutableStateMapOf<Int, String>() }
+    val bnMap = remember { mutableStateMapOf<Int, String>() }
     var deleteTarget by remember { mutableStateOf<Employee?>(null) }
     if (deleteTarget != null) {
         val t = deleteTarget!!
@@ -853,6 +854,7 @@ private fun EmployeeEditor(context: Context) {
     LaunchedEffect(base) {
         base.forEach { e ->
             if (!mbMap.containsKey(e.id)) mbMap[e.id] = if (e.monthlyBase > 0) e.monthlyBase.toInt().toString() else ""
+            if (!bnMap.containsKey(e.id)) bnMap[e.id] = if (e.bonus > 0) e.bonus.toInt().toString() else ""
         }
     }
     base.forEach { e ->
@@ -862,17 +864,19 @@ private fun EmployeeEditor(context: Context) {
                 GlassButton(context.getString(R.string.delete), modifier = Modifier.width(64.dp)) { deleteTarget = e }
             }
             TextField(value = mbMap[e.id] ?: "", onValueChange = { mbMap[e.id] = it }, label = context.getString(R.string.field_monthly_base), useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
+            TextField(value = bnMap[e.id] ?: "", onValueChange = { bnMap[e.id] = it }, label = "奖金", useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
         }
     }
     Spacer(Modifier.height(8.dp))
     GlassButton(context.getString(R.string.save_employee_salary), modifier = Modifier.fillMaxWidth()) {
-        Config.saveEmployees(context, base.map { e -> e.copy(monthlyBase = mbMap[e.id]?.toDoubleOrNull() ?: e.monthlyBase) })
+        Config.saveEmployees(context, base.map { e -> e.copy(monthlyBase = mbMap[e.id]?.toDoubleOrNull() ?: e.monthlyBase, bonus = bnMap[e.id]?.toDoubleOrNull() ?: e.bonus) })
         Toast.makeText(context, context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
     }
     Spacer(Modifier.height(12.dp))
     var nl by remember { mutableStateOf("") }
     var nz by remember { mutableStateOf("") }
     var nm by remember { mutableStateOf("") }
+    var nb by remember { mutableStateOf("") }
     Text(context.getString(R.string.add_employee), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
     Spacer(Modifier.height(6.dp))
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -882,10 +886,11 @@ private fun EmployeeEditor(context: Context) {
     Spacer(Modifier.height(6.dp))
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         TextField(value = nm, onValueChange = { nm = it }, label = context.getString(R.string.field_monthly_base), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+        TextField(value = nb, onValueChange = { nb = it }, label = "奖金", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
         GlassButton(context.getString(R.string.add), primary = true, modifier = Modifier.width(80.dp)) {
             if (nl.isNotBlank() || nz.isNotBlank()) {
-                Config.addEmployee(context, nl, nz, nm.toDoubleOrNull() ?: 0.0)
-                nl = ""; nz = ""; nm = ""; base = Config.employees(context)
+                Config.addEmployee(context, nl, nz, nm.toDoubleOrNull() ?: 0.0, nb.toDoubleOrNull() ?: 0.0)
+                nl = ""; nz = ""; nm = ""; nb = ""; base = Config.employees(context)
             }
         }
     }
