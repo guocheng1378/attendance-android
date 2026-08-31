@@ -144,6 +144,45 @@ object AttendanceStore {
     }
 
     /** 推送到 Supabase（upsert）。失败静默返回 false。 */
+    suspend fun importFromTracker(c: Context, url: String): Int {
+        return try {
+            val req = Request.Builder().url(url.trim()).build()
+            val body = client.newCall(req).execute().use { r -> if (r.isSuccessful) r.body?.string() else null } ?: return -1
+            val arr = JSONArray(body)
+            val emps = Config.employees(c).toMutableList()
+            fun empIdFor(zh: String, lo: String): Int {
+                emps.find { it.nameZh == zh }?.let { return it.id }
+                val id = (emps.maxOfOrNull { it.id } ?: 0) + 1
+                emps.add(Employee(id, lo, zh, "", 150000.0, 0.0, 0.0, 0.0))
+                return id
+            }
+            val list = all(c)
+            var n = 0
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                val d = o.getString("d")
+                val z = o.getString("z")
+                val lo = o.optString("n")
+                val status = when (o.optString("s")) {
+                    "f" -> Status.FULL
+                    "h" -> Status.HALF
+                    else -> Status.ABSENT
+                }
+                val t = o.optString("t")
+                val hhmm = if (t.length >= 16) t.substring(11, 16) else ""
+                val id = empIdFor(z, lo)
+                val rec = AttendanceRecord(id, d, status, hhmm, false)
+                list.removeAll { it.employeeId == id && it.date == d }
+                list.add(rec); n++
+            }
+            Config.saveEmployees(c, emps)
+            saveAll(c, list)
+            n
+        } catch (e: Exception) {
+            -1
+        }
+    }
+
     suspend fun pushToSupabase(c: Context): Boolean {
         if (!Config.cloudEnabled(c)) return false
         val url = Config.supabaseUrl(c).trimEnd('/') + "/rest/v1/attendance"
