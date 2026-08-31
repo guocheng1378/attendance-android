@@ -185,9 +185,9 @@ private fun shiftYm(ym: String, dir: Int): String {
 }
 
 private fun exportMonth(context: Context, ym: String, pays: List<MonthPay>) {
-    val sb = StringBuilder("姓名,全天,半天,缺勤,出勤折算,应出勤,月薪,奖金,扣减天,扣减,应发,预支,实发,备注\n")
+    val sb = StringBuilder("姓名,老挝文,全天,半天,缺勤,出勤折算,应出勤,月薪,奖金,扣减天,扣减,应发,预支,实发,备注\n")
     pays.forEach { p ->
-        sb.append(csvEsc(p.nameZh)).append(',')
+        sb.append(csvEsc(p.nameZh)).append(',').append(csvEsc(p.nameLo)).append(',')
             .append(p.fullDays).append(',').append(p.halfDays).append(',').append(p.absentDays).append(',')
             .append(fmtNum(p.attend)).append(',').append(p.expectedDays).append(',')
             .append(p.monthly.toLong()).append(',').append(p.bonus.toLong()).append(',').append(p.penaltyDays).append(',').append(p.penalty.toLong()).append(',')

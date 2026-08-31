@@ -1,6 +1,7 @@
 package com.eta.attendance
 
 import kotlin.math.max
+import kotlin.math.roundToLong
 import java.util.Calendar
 
 /**
@@ -57,6 +58,9 @@ data class MonthPay(
 object SalaryEngine {
     const val FREE_DAYS = 2
 
+    /** 金额按千位四舍五入 */
+    private fun roundKip(v: Double): Double = (v / 1000.0).roundToLong() * 1000.0
+
     fun daysInMonth(ym: String): Int {
         val p = ym.split("-")
         val y = p.getOrNull(0)?.toIntOrNull() ?: return 30
@@ -87,13 +91,14 @@ object SalaryEngine {
             attend < expected -> 1
             else -> 0
         }
-        val penalty = dailyRate * penaltyDays
-        val gross = attend * dailyRate
-        val net = (gross - penalty).coerceAtLeast(0.0) - advance
+        val gross = roundKip(attend * dailyRate)
+        val penalty = roundKip(dailyRate * penaltyDays)
+        val advanceR = roundKip(advance)
+        val net = roundKip((gross - penalty).coerceAtLeast(0.0) - advanceR)
         return MonthPay(
             emp.id, emp.nameZh, emp.nameLo, monthly, bonus, dim, expected,
             full, half, absent, attend, dailyRate, penaltyDays, penalty,
-            gross, advance, remark, net,
+            gross, advanceR, remark, net,
         )
     }
 }
