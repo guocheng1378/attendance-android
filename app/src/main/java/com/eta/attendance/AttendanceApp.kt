@@ -28,7 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import top.yukonga.miuix.kmp.window.WindowDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
@@ -105,7 +105,7 @@ private fun AttendanceScreen() {
 
 // ===================== 通用组件 =====================
 
-/** 玻璃风格确认对话框 */
+/** Miuix WindowDialog 风格确认对话框 */
 @Composable
 private fun GlassConfirmDialog(
     title: String,
@@ -113,25 +113,20 @@ private fun GlassConfirmDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val c = LocalAppColors.current
-    Dialog(onDismissRequest = onDismiss) {
-        GlassCard(
-            Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-        ) {
-            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
-            Spacer(Modifier.height(8.dp))
-            Text(message, fontSize = 14.sp, color = c.textSecondary)
-            Spacer(Modifier.height(16.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GlassButton("取消", modifier = Modifier.weight(1f)) { onDismiss() }
-                GlassButton("确定", primary = true, modifier = Modifier.weight(1f)) { onConfirm() }
-            }
+    WindowDialog(
+        title = title,
+        summary = message,
+        show = true,
+        onDismissRequest = onDismiss,
+    ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            GlassButton("取消", modifier = Modifier.weight(1f)) { onDismiss() }
+            GlassButton("确定", primary = true, modifier = Modifier.weight(1f)) { onConfirm() }
         }
     }
 }
 
-/** 月度日期选择对话框 */
+/** 月度日期选择对话框 (WindowDialog) */
 @Composable
 private fun MonthDatePicker(
     currentMonth: String,  // yyyy-MM
@@ -147,55 +142,52 @@ private fun MonthDatePicker(
     val firstDow = cal.get(Calendar.DAY_OF_WEEK) - 1 // 0=Sun
     val today = AttendanceStore.today()
 
-    Dialog(onDismissRequest = onDismiss) {
-        GlassCard(
-            Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-        ) {
-            Text(currentMonth, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.textPrimary, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-            Spacer(Modifier.height(12.dp))
-            // 星期标题
-            Row(Modifier.fillMaxWidth()) {
-                listOf("日", "一", "二", "三", "四", "五", "六").forEach {
-                    Text(it, Modifier.weight(1f), fontSize = 12.sp, color = c.textSecondary, textAlign = TextAlign.Center)
-                }
+    WindowDialog(
+        title = currentMonth,
+        show = true,
+        onDismissRequest = onDismiss,
+    ) {
+        // 星期标题
+        Row(Modifier.fillMaxWidth()) {
+            listOf("日", "一", "二", "三", "四", "五", "六").forEach {
+                Text(it, Modifier.weight(1f), fontSize = 12.sp, color = c.textSecondary, textAlign = TextAlign.Center)
             }
-            Spacer(Modifier.height(4.dp))
-            // 日期网格
-            val totalCells = firstDow + nDays
-            val rows = (totalCells + 6) / 7
-            for (row in 0 until rows) {
-                Row(Modifier.fillMaxWidth()) {
-                    for (col in 0 until 7) {
-                        val idx = row * 7 + col
-                        val day = idx - firstDow + 1
-                        if (day in 1..nDays) {
-                            val dateStr = String.format(Locale.US, "%s-%02d", currentMonth, day)
-                            val isSelected = dateStr == selectedDate
-                            val isToday = dateStr == today
-                            Box(
-                                Modifier.weight(1f).padding(2.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(
-                                        when {
-                                            isSelected -> MiuixTheme.colorScheme.primary
-                                            isToday -> c.navSelected
-                                            else -> Color.Transparent
-                                        }
-                                    )
-                                    .clickable { onDateSelected(dateStr) }
-                                    .padding(vertical = 6.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "$day", fontSize = 14.sp,
-                                    color = if (isSelected) Color.White else c.textPrimary,
-                                    fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
+        }
+        Spacer(Modifier.height(4.dp))
+        // 日期网格
+        val totalCells = firstDow + nDays
+        val rows = (totalCells + 6) / 7
+        for (row in 0 until rows) {
+            Row(Modifier.fillMaxWidth()) {
+                for (col in 0 until 7) {
+                    val idx = row * 7 + col
+                    val day = idx - firstDow + 1
+                    if (day in 1..nDays) {
+                        val dateStr = String.format(Locale.US, "%s-%02d", currentMonth, day)
+                        val isSelected = dateStr == selectedDate
+                        val isToday = dateStr == today
+                        Box(
+                            Modifier.weight(1f).padding(2.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    when {
+                                        isSelected -> MiuixTheme.colorScheme.primary
+                                        isToday -> c.navSelected
+                                        else -> Color.Transparent
+                                    }
                                 )
-                            }
-                        } else {
-                            Spacer(Modifier.weight(1f))
+                                .clickable { onDateSelected(dateStr) }
+                                .padding(vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "$day", fontSize = 14.sp,
+                                color = if (isSelected) Color.White else c.textPrimary,
+                                fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
+                            )
                         }
+                    } else {
+                        Spacer(Modifier.weight(1f))
                     }
                 }
             }
