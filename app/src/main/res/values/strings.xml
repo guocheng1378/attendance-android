@@ -34,4 +34,135 @@
     <string name="sync_now">立即同步</string>
     <string name="synced">已同步</string>
     <string name="sync_off">未配置云端，仅本地保存</string>
+
+    <!-- 签到页 -->
+    <string name="backfill_mode">补录模式</string>
+    <string name="select_all_full">全选全天</string>
+    <string name="select_all_half">全选半天</string>
+    <string name="select_all_absent">全选缺勤</string>
+    <string name="clear_all">清空</string>
+    <string name="record_count_fmt">共 %d 条记录</string>
+
+    <!-- 校验 -->
+    <string name="invalid_time_format">时间格式无效，请用 HH:mm</string>
+    <string name="invalid_time_range">时间无效：时 0-23，分 0-59</string>
+
+    <!-- 设置 - 分类入口 -->
+    <string name="settings_appearance">外观与语言</string>
+    <string name="settings_appearance_desc">主题、配色、界面语言</string>
+    <string name="settings_attendance">考勤与提醒</string>
+    <string name="settings_attendance_desc">上下班时间、未打卡提醒</string>
+    <string name="settings_salary">工资与员工</string>
+    <string name="settings_salary_desc">工资规则、员工薪资</string>
+    <string name="settings_data">数据与同步</string>
+    <string name="settings_data_desc">本地备份、WebDAV、GitHub、Supabase</string>
+
+    <!-- 设置 - 外观 -->
+    <string name="appearance">外观</string>
+    <string name="theme_mode">主题模式</string>
+    <string name="theme_follow">跟随</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="palette_label">配色</string>
+
+    <!-- 设置 - 考勤 -->
+    <string name="attendance_rules">考勤规则</string>
+    <string name="reminder_title">未打卡提醒</string>
+    <string name="reminder_desc">到点检查当天签到，未打卡发通知</string>
+    <string name="reminder_daily">每日提醒</string>
+    <string name="reminder_hour_label">时(0-23)</string>
+    <string name="reminder_min_label">分(0-59)</string>
+    <string name="reminder_save">保存提醒时间</string>
+    <string name="reminder_on">已开启提醒</string>
+    <string name="reminder_off">已关闭提醒</string>
+    <string name="reminder_saved">已保存</string>
+
+    <!-- 设置 - 工资 -->
+    <string name="pay_rules">工资规则</string>
+    <string name="expected_days">应出勤天数</string>
+    <string name="ot_rate_weekday">平日加班倍率</string>
+    <string name="ot_rate_weekend">周末加班倍率</string>
+    <string name="ot_rate_holiday">节日加班倍率</string>
+    <string name="late_deduction">每次迟到扣款(LAK)</string>
+    <string name="meal_allowance">餐补(LAK)</string>
+    <string name="transport_allowance">交通补(LAK)</string>
+    <string name="housing_allowance">住房补(LAK)</string>
+    <string name="save_pay_rules">保存工资规则</string>
+    <string name="employee_salary">员工薪资</string>
+    <string name="employee_salary_desc">日薪/月薪（基普）；月薪>0 时优先按月薪折算</string>
+    <string name="field_daily_wage">日薪</string>
+    <string name="field_monthly_base">月薪</string>
+    <string name="field_bonus">奖金</string>
+    <string name="field_advance">预支</string>
+    <string name="save_employee_salary">保存员工薪资</string>
+    <string name="add_employee">添加员工</string>
+    <string name="name_lo">老挝名</string>
+    <string name="name_zh">中文名</string>
+    <string name="delete">删</string>
+    <string name="add">添加</string>
+
+    <!-- 设置 - 数据 -->
+    <string name="data_backup">数据备份</string>
+    <string name="export_backup">导出备份</string>
+    <string name="import_backup">导入备份</string>
+    <string name="exported_to_download">已导出到 Download</string>
+    <string name="imported_fmt">已导入 %d 条</string>
+    <string name="backup_not_found">未找到备份文件</string>
+    <string name="webdav_title">坚果云 / WebDAV</string>
+    <string name="webdav_url">WebDAV 地址</string>
+    <string name="webdav_user">账号(邮箱)</string>
+    <string name="webdav_pass">应用密码</string>
+    <string name="webdav_path">远端路径</string>
+    <string name="save_webdav">保存 WebDAV</string>
+    <string name="upload_backup">上传备份</string>
+    <string name="restore_from_cloud">从云端恢复</string>
+    <string name="uploaded">已上传</string>
+    <string name="upload_failed">上传失败</string>
+    <string name="restored_fmt">恢复 %d 条</string>
+    <string name="restore_failed">恢复失败</string>
+    <string name="auto_backup">每日自动备份</string>
+    <string name="auto_backup_desc">每天自动将考勤数据上传到 WebDAV</string>
+    <string name="auto_backup_on">已开启自动备份</string>
+    <string name="auto_backup_off">已关闭自动备份</string>
+    <string name="import_from_github">从 GitHub 导入考勤</string>
+    <string name="import_from_github_desc">粘贴 attendance-tracker 备份 JSON 的 raw 链接，按姓名匹配员工并覆盖当月记录</string>
+    <string name="data_url">数据 URL</string>
+    <string name="import_btn">导入</string>
+    <string name="import_failed">导入失败</string>
+
+    <!-- 薪资页 -->
+    <string name="salary_title">工资</string>
+    <string name="employee_label">员工</string>
+    <string name="ot_leave_title">加班 &amp; 请假（可选）</string>
+    <string name="ot_weekday_hint">平日加班(h)</string>
+    <string name="ot_weekend_hint">周末加班(h)</string>
+    <string name="ot_holiday_hint">节日加班(h)</string>
+    <string name="leave_sick_hint">病假(天)</string>
+    <string name="leave_personal_hint">事假(天)</string>
+    <string name="leave_annual_hint">年假(天)</string>
+    <string name="net_pay_label">实发合计</string>
+    <string name="pay_attend_days">出勤天数</string>
+    <string name="pay_base">基本工资</string>
+    <string name="pay_overtime">加班费</string>
+    <string name="pay_allowance">补贴</string>
+    <string name="pay_bonus">奖金</string>
+    <string name="pay_advance">预支</string>
+    <string name="pay_deduction">扣款</string>
+    <string name="chart_day">本月每日实发</string>
+    <string name="chart_month">本年每月实发</string>
+    <string name="chart_year">近五年实发</string>
+    <string name="no_records_in_range">该范围内暂无记录</string>
+    <string name="export_range_csv">导出本范围 CSV</string>
+    <string name="range_day">日</string>
+    <string name="range_month">月</string>
+    <string name="range_year">年</string>
+    <string name="detail_records">明细记录</string>
+    <string name="month_overview_fmt">月历总览 %s</string>
+
+    <!-- 提醒 -->
+    <string name="notif_channel_name">未打卡提醒</string>
+    <string name="notif_channel_desc">当天还没有签到记录时提醒</string>
+    <string name="notif_title">考勤提醒</string>
+    <string name="notif_no_records">%s 还没有任何签到记录，记得打卡</string>
+    <string name="notif_missing_fmt">%s 还有 %d 人未签到：%s</string>
 </resources>

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -243,6 +244,7 @@ internal fun BottomNavBar(navController: NavController, backdrop: LayerBackdrop)
         BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
+                .clip(pill)
                 .textureBlur(
                     backdrop = backdrop,
                     shape = pill,
@@ -251,6 +253,7 @@ internal fun BottomNavBar(navController: NavController, backdrop: LayerBackdrop)
                     colors = glassColors,
                     highlight = highlight,
                 )
+                .wrapContentHeight()
                 .padding(6.dp),
         ) {
             val itemW = maxWidth / labels.size

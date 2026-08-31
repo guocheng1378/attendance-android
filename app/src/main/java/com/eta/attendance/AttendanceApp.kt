@@ -137,7 +137,7 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
                 Text("$selDate · " + context.getString(if (lateNow) R.string.late else R.string.on_time), fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f))
             } else {
                 Text(selDate, fontSize = 34.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("补录模式", fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f))
+                Text(context.getString(R.string.backfill_mode), fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f))
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -148,13 +148,13 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
         }
         Spacer(Modifier.height(16.dp))
         Text(context.getString(R.string.tap_name_hint), fontSize = 14.sp, color = Color.White)
-        Text("共 ${AttendanceStore.all(context).size} 条记录", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
+        Text(context.getString(R.string.record_count_fmt, AttendanceStore.all(context).size), fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatusChip("全选全天", false) { employees.forEach { picks[it.id] = Status.FULL } }
-            StatusChip("全选半天", false) { employees.forEach { picks[it.id] = Status.HALF } }
-            StatusChip("全选缺勤", false) { employees.forEach { picks[it.id] = Status.ABSENT } }
-            StatusChip("清空", false) { picks.clear() }
+            StatusChip(context.getString(R.string.select_all_full), false) { employees.forEach { picks[it.id] = Status.FULL } }
+            StatusChip(context.getString(R.string.select_all_half), false) { employees.forEach { picks[it.id] = Status.HALF } }
+            StatusChip(context.getString(R.string.select_all_absent), false) { employees.forEach { picks[it.id] = Status.ABSENT } }
+            StatusChip(context.getString(R.string.clear_all), false) { picks.clear() }
         }
         Spacer(Modifier.height(8.dp))
         employees.forEach { e ->
@@ -179,9 +179,11 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
         Spacer(Modifier.height(16.dp))
         GlassButton(context.getString(R.string.save), primary = true, modifier = Modifier.fillMaxWidth()) {
             val hhmm = if (isToday) timeStr.substring(0, 5) else ""
-            picks.forEach { (id, st) ->
-                AttendanceStore.upsert(context, AttendanceRecord(id, selDate, st, hhmm, lateNow && st == Status.FULL))
+            val records = picks.map { (id, st) ->
+                val isLateForRec = if (isToday) lateNow else isLate(hhmm, Config.workStart(context))
+                AttendanceRecord(id, selDate, st, hhmm, isLateForRec && st == Status.FULL)
             }
+            AttendanceStore.upsertBatch(context, records)
             Toast.makeText(context, context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
         }
     }
@@ -232,7 +234,7 @@ private fun StatsPanel() {
             }
         }
         GlassCard(Modifier.fillMaxWidth()) {
-            Text("月历总览 $ym", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Text(context.getString(R.string.month_overview_fmt, ym), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
             Spacer(Modifier.height(8.dp))
             MonthGrid(employees, AttendanceStore.all(context), ym)
         }
@@ -286,15 +288,15 @@ private fun SettingsPanel() {
         if (sub == 0) {
             Text(context.getString(R.string.tab_settings), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(Modifier.height(16.dp))
-            SettingEntry("外观与语言", "主题、配色、界面语言") { sub = 1 }
-            SettingEntry("考勤与提醒", "上下班时间、未打卡提醒") { sub = 2 }
-            SettingEntry("工资与员工", "工资规则、员工薪资") { sub = 3 }
-            SettingEntry("数据与同步", "本地备份、WebDAV、GitHub、Supabase") { sub = 4 }
+            SettingEntry(context.getString(R.string.settings_appearance), context.getString(R.string.settings_appearance_desc)) { sub = 1 }
+            SettingEntry(context.getString(R.string.settings_attendance), context.getString(R.string.settings_attendance_desc)) { sub = 2 }
+            SettingEntry(context.getString(R.string.settings_salary), context.getString(R.string.settings_salary_desc)) { sub = 3 }
+            SettingEntry(context.getString(R.string.settings_data), context.getString(R.string.settings_data_desc)) { sub = 4 }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 GlassButton("‹", modifier = Modifier.width(56.dp)) { sub = 0 }
                 Spacer(Modifier.width(12.dp))
-                Text(when (sub) { 1 -> "外观与语言"; 2 -> "考勤与提醒"; 3 -> "工资与员工"; else -> "数据与同步" }, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(when (sub) { 1 -> context.getString(R.string.settings_appearance); 2 -> context.getString(R.string.settings_attendance); 3 -> context.getString(R.string.settings_salary); else -> context.getString(R.string.settings_data) }, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
             Spacer(Modifier.height(16.dp))
             when (sub) {
@@ -302,17 +304,17 @@ private fun SettingsPanel() {
 
         // 外观：主题模式 + 配色
         GlassCard(Modifier.fillMaxWidth()) {
-            Text("外观", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Text(context.getString(R.string.appearance), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
             Spacer(Modifier.height(8.dp))
-            Text("主题模式", fontSize = 12.sp, color = c.textSecondary)
+            Text(context.getString(R.string.theme_mode), fontSize = 12.sp, color = c.textSecondary)
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatusChip("跟随", mode == ThemeMode.SYSTEM) { Config.saveThemeMode(context, ThemeMode.SYSTEM); (context as? Activity)?.recreate() }
-                StatusChip("浅色", mode == ThemeMode.LIGHT) { Config.saveThemeMode(context, ThemeMode.LIGHT); (context as? Activity)?.recreate() }
-                StatusChip("深色", mode == ThemeMode.DARK) { Config.saveThemeMode(context, ThemeMode.DARK); (context as? Activity)?.recreate() }
+                StatusChip(context.getString(R.string.theme_follow), mode == ThemeMode.SYSTEM) { Config.saveThemeMode(context, ThemeMode.SYSTEM); (context as? Activity)?.recreate() }
+                StatusChip(context.getString(R.string.theme_light), mode == ThemeMode.LIGHT) { Config.saveThemeMode(context, ThemeMode.LIGHT); (context as? Activity)?.recreate() }
+                StatusChip(context.getString(R.string.theme_dark), mode == ThemeMode.DARK) { Config.saveThemeMode(context, ThemeMode.DARK); (context as? Activity)?.recreate() }
             }
             Spacer(Modifier.height(12.dp))
-            Text("配色", fontSize = 12.sp, color = c.textSecondary)
+            Text(context.getString(R.string.palette_label), fontSize = 12.sp, color = c.textSecondary)
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Palettes.ALL.forEach { p ->
@@ -359,8 +361,12 @@ private fun SettingsPanel() {
             TextField(value = end, onValueChange = { end = it }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
             GlassButton(context.getString(R.string.save), modifier = Modifier.fillMaxWidth()) {
-                Config.saveWorkTime(context, start, end)
-                Toast.makeText(context, context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
+                if (!Config.isValidTime(start) || !Config.isValidTime(end)) {
+                    Toast.makeText(context, context.getString(R.string.invalid_time_format), Toast.LENGTH_SHORT).show()
+                } else {
+                    Config.saveWorkTime(context, start, end)
+                    Toast.makeText(context, context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
+                }
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -382,9 +388,15 @@ private fun SettingsPanel() {
             NumField("分(0-59)", remM) { remM = it }
             Spacer(Modifier.height(8.dp))
             GlassButton("保存提醒时间", modifier = Modifier.fillMaxWidth()) {
-                Config.saveReminder(context, remOn, remH.toIntOrNull() ?: 9, remM.toIntOrNull() ?: 0)
-                if (remOn) Reminder.schedule(context)
-                Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+                val h = remH.toIntOrNull()
+                val m = remM.toIntOrNull()
+                if (h == null || m == null || h !in 0..23 || m !in 0..59) {
+                    Toast.makeText(context, context.getString(R.string.invalid_time_range), Toast.LENGTH_SHORT).show()
+                } else {
+                    Config.saveReminder(context, remOn, h, m)
+                    if (remOn) Reminder.schedule(context)
+                    Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+                }
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -486,6 +498,14 @@ private fun SettingsPanel() {
                     scope.launch { val n = AttendanceStore.pullFromDav(context); Toast.makeText(context, if (n >= 0) "恢复 $n 条" else "恢复失败", Toast.LENGTH_SHORT).show() }
                 }
             }
+            Spacer(Modifier.height(8.dp))
+            var autoBackupOn by remember { mutableStateOf(Config.autoBackupEnabled(context)) }
+            SwitchPreference(checked = autoBackupOn, onCheckedChange = { nv ->
+                autoBackupOn = nv
+                Config.saveAutoBackup(context, nv)
+                if (nv) AutoBackup.schedule(context) else AutoBackup.cancel(context)
+                Toast.makeText(context, if (nv) "已开启自动备份" else "已关闭自动备份", Toast.LENGTH_SHORT).show()
+            }, title = "每日自动备份", summary = "每天自动将考勤数据上传到 WebDAV")
         }
         Spacer(Modifier.height(12.dp))
 

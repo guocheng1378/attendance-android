@@ -34,4 +34,135 @@
     <string name="sync_now">ຊິງດຽວນີ້</string>
     <string name="synced">ຊິງແລ້ວ</string>
     <string name="sync_off">ຍັງບໍ່ຕັ້ງຄລາວ, ບັນທຶກໄວ້ພຽງເຄື່ອງ</string>
+
+    <!-- 签到页 -->
+    <string name="backfill_mode">ບັນທຶກຍ້ອນຫຼັງ</string>
+    <string name="select_all_full">ເລືອກທັງໝົດເຕັມມື້</string>
+    <string name="select_all_half">ເລືອກທັງໝົດຄ້າງມື້</string>
+    <string name="select_all_absent">ເລືອກທັງໝົດບໍ່ມາ</string>
+    <string name="clear_all">ລຶບທັງໝົດ</string>
+    <string name="record_count_fmt">ລວມ %d ລາຍການ</string>
+
+    <!-- 校验 -->
+    <string name="invalid_time_format">ຮູບແບບເວລາບໍ່ຖືກ, ໃຊ້ HH:mm</string>
+    <string name="invalid_time_range">ເວລາບໍ່ຖືກ: ຊົ່ວໂມງ 0-23, ນາທີ 0-59</string>
+
+    <!-- 设置 - 分类入口 -->
+    <string name="settings_appearance">ຮູບລັກສະນະ ແລະ ພາສາ</string>
+    <string name="settings_appearance_desc">ຮູບແບບ, ສີ, ພາສາ</string>
+    <string name="settings_attendance">ການເຂົ້າວຽກ ແລະ ແຈ້ງເຕືອນ</string>
+    <string name="settings_attendance_desc">ເວລາເຂົ້າ-ອອກວຽກ, ແຈ້ງເຕືອນລືມເຊັກອິນ</string>
+    <string name="settings_salary">ເງິນເດືອນ ແລະ ພະນັກງານ</string>
+    <string name="settings_salary_desc">ກົດເງິນເດືອນ, ເງິນເດືອນພະນັກງານ</string>
+    <string name="settings_data">ຂໍ້ມູນ ແລະ ຊິງ</string>
+    <string name="settings_data_desc">ສຳຮອງ, WebDAV, GitHub, Supabase</string>
+
+    <!-- 设置 - 外观 -->
+    <string name="appearance">ຮູບລັກສະນະ</string>
+    <string name="theme_mode">ຮູບແບບຮູບ</string>
+    <string name="theme_follow">ຕາມລະບົບ</string>
+    <string name="theme_light">ສະຫວ່າງ</string>
+    <string name="theme_dark">ມືດ</string>
+    <string name="palette_label">ສີ</string>
+
+    <!-- 设置 - 考勤 -->
+    <string name="attendance_rules">ກົດການເຂົ້າວຽກ</string>
+    <string name="reminder_title">ແຈ້ງເຕືອນລືມເຊັກອິນ</string>
+    <string name="reminder_desc">ກວດສອບການເຊັກອິນປະຈຳວັນ, ແຈ້ງເຕືອນຖ້າຍັງບໍ່ໄດ້ເຊັກ</string>
+    <string name="reminder_daily">ແຈ້ງເຕືອນທຸກມື້</string>
+    <string name="reminder_hour_label">ຊົ່ວໂມງ(0-23)</string>
+    <string name="reminder_min_label">ນາທີ(0-59)</string>
+    <string name="reminder_save">ບັນທຶກເວລາແຈ້ງເຕືອນ</string>
+    <string name="reminder_on">ເປີດແຈ້ງເຕືອນແລ້ວ</string>
+    <string name="reminder_off">ປິດແຈ້ງເຕືອນແລ້ວ</string>
+    <string name="reminder_saved">ບັນທຶກແລ້ວ</string>
+
+    <!-- 设置 - 工资 -->
+    <string name="pay_rules">ກົດເງິນເດືອນ</string>
+    <string name="expected_days">ຈຳນວນມື້ເຮັດວຽກ</string>
+    <string name="ot_rate_weekday">ອັດຕາໂອທີມື້ປົກກະຕິ</string>
+    <string name="ot_rate_weekend">ອັດຕາໂອທີສຸດອາທິດ</string>
+    <string name="ot_rate_holiday">ອັດຕາໂອທີວັນພັກ</string>
+    <string name="late_deduction">ຫັກເງິນມາຊ້າ(LAK)</string>
+    <string name="meal_allowance">ເບີຍອາຫານ(LAK)</string>
+    <string name="transport_allowance">ເບີຍເດີນທາງ(LAK)</string>
+    <string name="housing_allowance">ເບີຍທີ່ພັກ(LAK)</string>
+    <string name="save_pay_rules">ບັນທຶກກົດເງິນເດືອນ</string>
+    <string name="employee_salary">ເງິນເດືອນພະນັກງານ</string>
+    <string name="employee_salary_desc">ເງິນເດືອນ/ເງິນເດືອນ (ກີບ); ເງິນເດືອນ>0 ຄິດຕາມເງິນເດືອນ</string>
+    <string name="field_daily_wage">ເງິນເດືອນ/ມື້</string>
+    <string name="field_monthly_base">ເງິນເດືອນ</string>
+    <string name="field_bonus">ໂບນັດ</string>
+    <string name="field_advance">ເງິນກູ້</string>
+    <string name="save_employee_salary">ບັນທຶກເງິນເດືອນ</string>
+    <string name="add_employee">ເພີ່ມພະນັກງານ</string>
+    <string name="name_lo">ຊື່ລາວ</string>
+    <string name="name_zh">ຊື່ຈີນ</string>
+    <string name="delete">ລຶບ</string>
+    <string name="add">ເພີ່ມ</string>
+
+    <!-- 设置 - 数据 -->
+    <string name="data_backup">ສຳຮອງຂໍ້ມູນ</string>
+    <string name="export_backup">ສົ່ງອອກສຳຮອງ</string>
+    <string name="import_backup">ນຳເຂົ້າສຳຮອງ</string>
+    <string name="exported_to_download">ສົ່ງອອກໄປ Download ແລ້ວ</string>
+    <string name="imported_fmt">ນຳເຂົ້າ %d ລາຍການ</string>
+    <string name="backup_not_found">ບໍ່ພົບໄຟລ໌ສຳຮອງ</string>
+    <string name="webdav_title">WebDAV</string>
+    <string name="webdav_url">ທີ່ຢູ່ WebDAV</string>
+    <string name="webdav_user">ບັນຊີ(ອີເມວ)</string>
+    <string name="webdav_pass">ລະຫັດແອັບ</string>
+    <string name="webdav_path">ທາງໄກ</string>
+    <string name="save_webdav">ບັນທຶກ WebDAV</string>
+    <string name="upload_backup">ອັບໂຫຼດສຳຮອງ</string>
+    <string name="restore_from_cloud">ກູ້ຄືນຈາກຄລາວ</string>
+    <string name="uploaded">ອັບໂຫຼດແລ້ວ</string>
+    <string name="upload_failed">ອັບໂຫຼດລົ້ມເຫຼວ</string>
+    <string name="restored_fmt">ກູ້ຄືນ %d ລາຍການ</string>
+    <string name="restore_failed">ກູ້ຄືນລົ້ມເຫຼວ</string>
+    <string name="auto_backup">ສຳຮອງອັດຕະໂນມັດທຸກມື້</string>
+    <string name="auto_backup_desc">ອັບໂຫຼດຂໍ້ມູນໄປ WebDAV ທຸກມື້</string>
+    <string name="auto_backup_on">ເປີດສຳຮອງອັດຕະໂນມັດແລ້ວ</string>
+    <string name="auto_backup_off">ປິດສຳຮອງອັດຕະໂນມັດແລ້ວ</string>
+    <string name="import_from_github">ນຳເຂົ້າຈາກ GitHub</string>
+    <string name="import_from_github_desc">ວາງລິ້ງ JSON, ຈັບຄູ່ພະນັກງານຕາມຊື່</string>
+    <string name="data_url">URL ຂໍ້ມູນ</string>
+    <string name="import_btn">ນຳເຂົ້າ</string>
+    <string name="import_failed">ນຳເຂົ້າລົ້ມເຫຼວ</string>
+
+    <!-- 薪资页 -->
+    <string name="salary_title">ເງິນເດືອນ</string>
+    <string name="employee_label">ພະນັກງານ</string>
+    <string name="ot_leave_title">ໂອທີ &amp; ລາພັກ (ທາງເລືອກ)</string>
+    <string name="ot_weekday_hint">ໂອທີມື້ປົກກະຕິ(ຊົ່ວໂມງ)</string>
+    <string name="ot_weekend_hint">ໂອທີສຸດອາທິດ(ຊົ່ວໂມງ)</string>
+    <string name="ot_holiday_hint">ໂອທີວັນພັກ(ຊົ່ວໂມງ)</string>
+    <string name="leave_sick_hint">ລາປ່ວຍ(ມື້)</string>
+    <string name="leave_personal_hint">ລາກິດ(ມື້)</string>
+    <string name="leave_annual_hint">ລາພັກ(ມື້)</string>
+    <string name="net_pay_label">ເງິນສຸດທິ</string>
+    <string name="pay_attend_days">ມື້ເຂົ້າວຽກ</string>
+    <string name="pay_base">ເງິນເດືອນພື້ນຖານ</string>
+    <string name="pay_overtime">ເງິນໂອທີ</string>
+    <string name="pay_allowance">ເບີຍ</string>
+    <string name="pay_bonus">ໂບນັດ</string>
+    <string name="pay_advance">ເງິນກູ້</string>
+    <string name="pay_deduction">ຫັກເງິນ</string>
+    <string name="chart_day">ເງິນແຕ່ລະມື້ເດືອນນີ້</string>
+    <string name="chart_month">ເງິນແຕ່ລະເດືອນປີນີ້</string>
+    <string name="chart_year">ເງິນ5ປີຜ່ານມາ</string>
+    <string name="no_records_in_range">ບໍ່ມີຂໍ້ມູນໃນຊ່ວງນີ້</string>
+    <string name="export_range_csv">ສົ່ງອອກ CSV</string>
+    <string name="range_day">ມື້</string>
+    <string name="range_month">ເດືອນ</string>
+    <string name="range_year">ປີ</string>
+    <string name="detail_records">ລາຍການລະອຽດ</string>
+    <string name="month_overview_fmt">ສະຫຼຸບ %s</string>
+
+    <!-- 提醒 -->
+    <string name="notif_channel_name">ແຈ້ງເຕືອນລືມເຊັກອິນ</string>
+    <string name="notif_channel_desc">ແຈ້ງເຕືອນເມື່ອຍັງບໍ່ໄດ້ເຊັກອິນ</string>
+    <string name="notif_title">ແຈ້ງເຕືອນເຊັກອິນ</string>
+    <string name="notif_no_records">%s ຍັງບໍ່ມີການເຊັກອິນ, ຢ່າລືມບັນທຶກ</string>
+    <string name="notif_missing_fmt">%s ຍັງ %d ຄົນບໍ່ເຊັກອິນ: %s</string>
 </resources>

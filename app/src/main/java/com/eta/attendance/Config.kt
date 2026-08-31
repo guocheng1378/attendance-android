@@ -2,6 +2,8 @@ package com.eta.attendance
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -19,16 +21,15 @@ data class Employee(
 
 /**
  * 运行时配置：语言、上下班时间、主题、配色、工资规则、员工名单、Supabase、WebDAV。
- * 全部持久化到 SharedPreferences；Supabase 默认值来自 BuildConfig（CI 注入）。
+ * 敏感字段（API Key、密码）使用 EncryptedSharedPreferences 加密存储。
  */
 object Config {
 
     private const val PREFS = "attendance_config"
+    private const val SECURE_PREFS = "attendance_secure"
     private const val KEY_LOCALE = "locale"
     private const val KEY_WORK_START = "work_start"
     private const val KEY_WORK_END = "work_end"
-    private const val KEY_SB_URL = "supabase_url"
-    private const val KEY_SB_KEY = "supabase_key"
     private const val KEY_THEME_MODE = "theme_mode"
     private const val KEY_PALETTE = "palette"
     private const val KEY_PAY_RULE = "pay_rule"
@@ -40,6 +41,9 @@ object Config {
     private const val KEY_REMINDER_ON = "reminder_on"
     private const val KEY_REMINDER_HOUR = "reminder_hour"
     private const val KEY_REMINDER_MIN = "reminder_min"
+    private const val KEY_SB_URL = "supabase_url"
+    private const val KEY_SB_KEY = "supabase_key"
+    private const val KEY_AUTO_BACKUP = "auto_backup"
 
     private val DEFAULT_EMPLOYEES = listOf(
         Employee(1, "ແຫນ", "盘"),
@@ -63,6 +67,18 @@ object Config {
     private fun sp(c: Context): SharedPreferences =
         c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
+    /** 加密 SharedPreferences（敏感数据：API Key、密码） */
+    private fun secureSp(c: Context): SharedPreferences {
+        val masterKey = MasterKey.Builder(c)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        return EncryptedSharedPreferences.create(
+            c, SECURE_PREFS, masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        )
+    }
+
     // 语言
     fun locale(c: Context): String = sp(c).getString(KEY_LOCALE, "zh") ?: "zh"
     fun saveLocale(c: Context, v: String) { sp(c).edit().putString(KEY_LOCALE, v).apply() }
@@ -73,6 +89,18 @@ object Config {
     fun saveWorkTime(c: Context, start: String, end: String) {
         sp(c).edit().putString(KEY_WORK_START, start).putString(KEY_WORK_END, end).apply()
     }
+
+    /** 校验 HH:mm 格式 */
+    fun isValidTime(v: String): Boolean =
+        v.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$"))
+
+    /** 校验正数（薪资/倍率等） */
+    fun isValidPositiveNumber(v: String): Boolean =
+        v.toDoubleOrNull()?.let { it >= 0 } == true
+
+    /** 校验正整数 */
+    fun isValidPositiveInt(v: String): Boolean =
+        v.toIntOrNull()?.let { it >= 0 } == true
 
     // 主题模式与配色
     fun themeMode(c: Context): ThemeMode =
@@ -159,29 +187,49 @@ object Config {
         saveEmployees(c, employees(c).filter { it.id != id })
     }
 
-    // Supabase
-    fun supabaseUrl(c: Context): String =
-        sp(c).getString(KEY_SB_URL, BuildConfig.SUPABASE_URL) ?: BuildConfig.SUPABASE_URL
-    fun supabaseKey(c: Context): String =
-        sp(c).getString(KEY_SB_KEY, BuildConfig.SUPABASE_KEY) ?: BuildConfig.SUPABASE_KEY
+    // Supabase（敏感数据用加密存储）
+    fun supabaseUrl(c: Context): String {
+        val secure = runCatching { secureSp(c) }.getOrNull()
+        val v = secure?.getString(KEY_SB_URL, null) ?: sp(c).getString(KEY_SB_URL, BuildConfig.SUPABASE_URL)
+        return v ?: BuildConfig.SUPABASE_URL
+    }
+    fun supabaseKey(c: Context): String {
+        val secure = runCatching { secureSp(c) }.getOrNull()
+        val v = secure?.getString(KEY_SB_KEY, null) ?: sp(c).getString(KEY_SB_KEY, BuildConfig.SUPABASE_KEY)
+        return v ?: BuildConfig.SUPABASE_KEY
+    }
     fun saveSupabase(c: Context, url: String, key: String) {
-        sp(c).edit().putString(KEY_SB_URL, url.trim()).putString(KEY_SB_KEY, key.trim()).apply()
+        val secure = runCatching { secureSp(c) }.getOrNull()
+        if (secure != null) {
+            secure.edit().putString(KEY_SB_URL, url.trim()).putString(KEY_SB_KEY, key.trim()).apply()
+        } else {
+            sp(c).edit().putString(KEY_SB_URL, url.trim()).putString(KEY_SB_KEY, key.trim()).apply()
+        }
     }
     fun cloudEnabled(c: Context): Boolean =
         supabaseUrl(c).isNotBlank() && supabaseKey(c).isNotBlank()
 
-    // WebDAV（坚果云）
+    // WebDAV（坚果云）— 密码用加密存储
     fun davUrl(c: Context): String = sp(c).getString(KEY_DAV_URL, "") ?: ""
     fun davUser(c: Context): String = sp(c).getString(KEY_DAV_USER, "") ?: ""
-    fun davPass(c: Context): String = sp(c).getString(KEY_DAV_PASS, "") ?: ""
+    fun davPass(c: Context): String {
+        val secure = runCatching { secureSp(c) }.getOrNull()
+        return secure?.getString(KEY_DAV_PASS, null) ?: sp(c).getString(KEY_DAV_PASS, "") ?: ""
+    }
     fun davPath(c: Context): String = sp(c).getString(KEY_DAV_PATH, "/attendance_backup.json") ?: "/attendance_backup.json"
     fun saveDav(c: Context, url: String, user: String, pass: String, path: String) {
         sp(c).edit()
             .putString(KEY_DAV_URL, url.trim())
             .putString(KEY_DAV_USER, user.trim())
-            .putString(KEY_DAV_PASS, pass)
             .putString(KEY_DAV_PATH, path.ifBlank { "/attendance_backup.json" })
             .apply()
+        // 密码存加密区
+        val secure = runCatching { secureSp(c) }.getOrNull()
+        if (secure != null) {
+            secure.edit().putString(KEY_DAV_PASS, pass).apply()
+        } else {
+            sp(c).edit().putString(KEY_DAV_PASS, pass).apply()
+        }
     }
     fun davEnabled(c: Context): Boolean =
         davUrl(c).isNotBlank() && davUser(c).isNotBlank()
@@ -195,5 +243,11 @@ object Config {
             .putInt(KEY_REMINDER_HOUR, hour.coerceIn(0, 23))
             .putInt(KEY_REMINDER_MIN, minute.coerceIn(0, 59))
             .apply()
+    }
+
+    // 自动备份
+    fun autoBackupEnabled(c: Context): Boolean = sp(c).getBoolean(KEY_AUTO_BACKUP, false)
+    fun saveAutoBackup(c: Context, enabled: Boolean) {
+        sp(c).edit().putBoolean(KEY_AUTO_BACKUP, enabled).apply()
     }
 }

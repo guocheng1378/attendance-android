@@ -1,6 +1,8 @@
 package com.eta.attendance
 
 import android.content.Context
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -81,6 +83,17 @@ object AttendanceStore {
         saveAll(c, list)
     }
 
+    /** 批量记录/更新：一次读写，避免 O(n²)。 */
+    fun upsertBatch(c: Context, recs: List<AttendanceRecord>) {
+        if (recs.isEmpty()) return
+        val list = all(c)
+        recs.forEach { rec ->
+            list.removeAll { it.employeeId == rec.employeeId && it.date == rec.date }
+            list.add(rec)
+        }
+        saveAll(c, list)
+    }
+
     fun forDate(c: Context, date: String): List<AttendanceRecord> =
         all(c).filter { it.date == date }
 
@@ -98,21 +111,67 @@ object AttendanceStore {
         return map
     }
 
+    /** CSV 字段转义：含逗号/引号/换行的字段加双引号 */
+    private fun csvField(v: String): String {
+        return if (v.contains(',') || v.contains('"') || v.contains('\n')) {
+            "\"${v.replace("\"", "\"\"")}\""
+        } else v
+    }
+
     /** 导出 CSV 文本 */
     fun toCsv(c: Context): String {
         val sb = StringBuilder()
         sb.append("date,employeeId,nameZh,nameLo,status,checkInTime,late\n")
         all(c).sortedWith(compareBy({ it.date }, { it.employeeId })).forEach { r ->
             val e = Config.employees(c).firstOrNull { it.id == r.employeeId }
-            sb.append(r.date).append(',')
+            sb.append(csvField(r.date)).append(',')
                 .append(r.employeeId).append(',')
-                .append(e?.nameZh ?: "").append(',')
-                .append(e?.nameLo ?: "").append(',')
+                .append(csvField(e?.nameZh ?: "")).append(',')
+                .append(csvField(e?.nameLo ?: "")).append(',')
                 .append(r.status.name).append(',')
-                .append(r.checkInTime).append(',')
+                .append(csvField(r.checkInTime)).append(',')
                 .append(r.late).append('\n')
         }
         return sb.toString()
+    }
+
+    /** 导入 CSV：格式 date,employeeId,status,checkInTime,late（跳过表头） */
+    fun importCsv(c: Context, csv: String): Int {
+        val lines = csv.lines().filter { it.isNotBlank() }
+        if (lines.isEmpty()) return 0
+        val list = all(c)
+        var n = 0
+        val start = if (lines[0].startsWith("date,")) 1 else 0
+        for (i in start until lines.size) {
+            val parts = parseCsvLine(lines[i])
+            if (parts.size < 4) continue
+            val date = parts[0]
+            val empId = parts[1].toIntOrNull() ?: continue
+            val status = runCatching { Status.valueOf(parts[2]) }.getOrNull() ?: continue
+            val time = parts[3]
+            val late = parts.getOrNull(4)?.toBooleanStrictOrNull() ?: false
+            val rec = AttendanceRecord(empId, date, status, time, late)
+            list.removeAll { it.employeeId == empId && it.date == date }
+            list.add(rec); n++
+        }
+        saveAll(c, list)
+        return n
+    }
+
+    /** 简单 CSV 行解析（支持双引号字段） */
+    private fun parseCsvLine(line: String): List<String> {
+        val result = mutableListOf<String>()
+        val sb = StringBuilder()
+        var inQuote = false
+        for (ch in line) {
+            when {
+                ch == '"' -> inQuote = !inQuote
+                ch == ',' && !inQuote -> { result.add(sb.toString()); sb.clear() }
+                else -> sb.append(ch)
+            }
+        }
+        result.add(sb.toString())
+        return result
     }
 
     /** 导出全量备份 JSON */
@@ -143,11 +202,12 @@ object AttendanceStore {
         saveAll(c, list); return n
     }
 
-    /** 推送到 Supabase（upsert）。失败静默返回 false。 */
-    suspend fun importFromTracker(c: Context, url: String): Int {
-        return try {
+    /** 从 Tracker JSON 导入（按姓名匹配员工）。IO 线程执行。 */
+    suspend fun importFromTracker(c: Context, url: String): Int = withContext(Dispatchers.IO) {
+        try {
             val req = Request.Builder().url(url.trim()).build()
-            val body = client.newCall(req).execute().use { r -> if (r.isSuccessful) r.body?.string() else null } ?: return -1
+            val body = client.newCall(req).execute().use { r -> if (r.isSuccessful) r.body?.string() else null }
+                ?: return@withContext -1
             val arr = JSONArray(body)
             val emps = Config.employees(c).toMutableList()
             fun empIdFor(zh: String, lo: String): Int {
@@ -183,20 +243,19 @@ object AttendanceStore {
         }
     }
 
-    suspend fun pushToSupabase(c: Context): Boolean {
-        if (!Config.cloudEnabled(c)) return false
+    /** 推送到 Supabase（upsert）。IO 线程执行。 */
+    suspend fun pushToSupabase(c: Context): Boolean = withContext(Dispatchers.IO) {
+        if (!Config.cloudEnabled(c)) return@withContext false
         val url = Config.supabaseUrl(c).trimEnd('/') + "/rest/v1/attendance"
         val arr = JSONArray()
         all(c).forEach { r ->
-            arr.put(
-                JSONObject().apply {
-                    put("employee_id", r.employeeId)
-                    put("date", r.date)
-                    put("status", r.status.name.lowercase())
-                    put("check_in_time", r.checkInTime)
-                    put("late", r.late)
-                }
-            )
+            arr.put(JSONObject().apply {
+                put("employee_id", r.employeeId)
+                put("date", r.date)
+                put("status", r.status.name.lowercase())
+                put("check_in_time", r.checkInTime)
+                put("late", r.late)
+            })
         }
         val req = Request.Builder()
             .url(url)
@@ -205,29 +264,27 @@ object AttendanceStore {
             .header("Prefer", "resolution=merge-duplicates")
             .post(arr.toString().toRequestBody(JSON))
             .build()
-        return runCatching {
-            client.newCall(req).execute().use { it.isSuccessful }
-        }.getOrDefault(false)
+        runCatching { client.newCall(req).execute().use { it.isSuccessful } }.getOrDefault(false)
     }
 
-    /** WebDAV 上传备份（坚果云） */
-    suspend fun pushToDav(c: Context): Boolean {
-        if (!Config.davEnabled(c)) return false
+    /** WebDAV 上传备份（坚果云）。IO 线程执行。 */
+    suspend fun pushToDav(c: Context): Boolean = withContext(Dispatchers.IO) {
+        if (!Config.davEnabled(c)) return@withContext false
         val req = Request.Builder().url(davFullUrl(c))
             .header("Authorization", davAuth(c))
             .put(exportBackup(c).toRequestBody(JSON))
             .build()
-        return runCatching { client.newCall(req).execute().use { it.isSuccessful } }.getOrDefault(false)
+        runCatching { client.newCall(req).execute().use { it.isSuccessful } }.getOrDefault(false)
     }
 
-    /** WebDAV 下载并导入，返回条数（-1 失败） */
-    suspend fun pullFromDav(c: Context): Int {
-        if (!Config.davEnabled(c)) return -1
+    /** WebDAV 下载并导入，返回条数（-1 失败）。IO 线程执行。 */
+    suspend fun pullFromDav(c: Context): Int = withContext(Dispatchers.IO) {
+        if (!Config.davEnabled(c)) return@withContext -1
         val req = Request.Builder().url(davFullUrl(c)).header("Authorization", davAuth(c)).get().build()
-        return runCatching {
+        runCatching {
             client.newCall(req).execute().use { resp ->
-                if (!resp.isSuccessful) return -1
-                val body = resp.body?.string() ?: return -1
+                if (!resp.isSuccessful) return@withContext -1
+                val body = resp.body?.string() ?: return@withContext -1
                 importBackup(c, body)
             }
         }.getOrDefault(-1)

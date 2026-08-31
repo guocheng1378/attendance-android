@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
+import com.eta.attendance.R
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -25,8 +26,8 @@ object Reminder {
     fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val ch = NotificationChannel(
-                CHANNEL_ID, "未打卡提醒", NotificationManager.IMPORTANCE_HIGH
-            ).apply { description = "当天还没有签到记录时提醒" }
+                CHANNEL_ID, context.getString(R.string.notif_channel_name), NotificationManager.IMPORTANCE_HIGH
+            ).apply { description = context.getString(R.string.notif_channel_desc) }
             context.getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
         }
     }
@@ -66,7 +67,7 @@ object Reminder {
         if (!hasPermission(context)) return
         val n = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("考勤提醒")
+            .setContentTitle(context.getString(R.string.notif_title))
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setAutoCancel(true)
@@ -86,12 +87,12 @@ class CheckInReminderWorker(context: Context, params: WorkerParameters) :
         val today = AttendanceStore.today()
         val records = AttendanceStore.forDate(context, today)
         if (records.isEmpty()) {
-            Reminder.notifyNow(context, "$today 还没有任何签到记录，记得打卡")
+            Reminder.notifyNow(context, context.getString(R.string.notif_no_records, today))
         } else if (records.size < employees.size) {
             val done = records.map { it.employeeId }.toSet()
             val missing = employees.filter { it.id !in done }
             val names = missing.take(6).joinToString("、") { it.nameZh.ifBlank { it.nameLo } }
-            Reminder.notifyNow(context, "$today 还有 ${missing.size} 人未签到：$names")
+            Reminder.notifyNow(context, context.getString(R.string.notif_missing_fmt, today, missing.size, names))
         }
         return Result.success()
     }

@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
             notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         if (Config.reminderEnabled(this)) Reminder.schedule(this)
+        if (Config.autoBackupEnabled(this) && Config.davEnabled(this)) AutoBackup.schedule(this)
         setContent {
             AttendanceApp()
         }
