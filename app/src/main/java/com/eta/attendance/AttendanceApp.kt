@@ -65,21 +65,28 @@ private fun AttendanceScreen() {
     val backStack = rememberNavBackStack<Route>(Route.CheckIn)
     val navController = remember { NavController(backStack) }
     val c = LocalAppColors.current
-    val backdrop = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
+    // 背景专用 backdrop：只录制 GlassBackground，供卡片/底栏采样，避免自引用递归闪退
+    val backdropBg = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
+    // 内容盒自身的 backdrop（仅用于本层绘制，不被卡片采样）
+    val backdropContent = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
     Box(Modifier.fillMaxSize()) {
-        CompositionLocalProvider(LocalBackdrop provides backdrop) {
-            Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
-                GlassBackground()
-            }
-            NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
-                entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
-                entry<Route.Stats> { StatsPanel() }
-                entry<Route.Salary> { SalaryPanel2() }
-                entry<Route.Settings> { SettingsPanel() }
+        // 背景层：录制背景并在屏上画出渐变
+        Box(Modifier.fillMaxSize().layerBackdrop(backdropBg)) {
+            GlassBackground()
+        }
+        // 内容层：后绘制=在上层；卡片采样 backdropBg（仅背景）→ 无递归、不闪退
+        Box(Modifier.fillMaxSize().layerBackdrop(backdropContent)) {
+            CompositionLocalProvider(LocalBackdrop provides backdropBg) {
+                NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
+                    entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
+                    entry<Route.Stats> { StatsPanel() }
+                    entry<Route.Salary> { SalaryPanel2() }
+                    entry<Route.Settings> { SettingsPanel() }
+                }
             }
         }
         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
-            BottomNavBar(navController, backdrop)
+            BottomNavBar(navController, backdropBg)
         }
     }
 }
