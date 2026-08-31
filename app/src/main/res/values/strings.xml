@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">考勤签到</string>
+    <string name="app_subtitle">每日出勤记录</string>
+    <string name="tab_checkin">签到</string>
+    <string name="tab_stats">统计</string>
+    <string name="tab_salary">工资</string>
+    <string name="tab_settings">设置</string>
+    <string name="status_full">全天</string>
+    <string name="status_half">半天</string>
+    <string name="status_absent">缺勤</string>
+    <string name="save">保存记录</string>
+    <string name="saved">已保存!</string>
+    <string name="export_csv">导出 CSV</string>
+    <string name="no_data">暂无数据</string>
+    <string name="total">共</string>
+    <string name="workers">人</string>
+    <string name="late">迟到</string>
+    <string name="early">早退</string>
+    <string name="on_time">准时</string>
+    <string name="today">今日</string>
+    <string name="month_summary">月度考勤汇总</string>
+    <string name="detail">详细信息</string>
+    <string name="back">返回签到</string>
+    <string name="language">界面语言</string>
+    <string name="work_start">上班时间</string>
+    <string name="work_end">下班时间</string>
+    <string name="employees">员工名单</string>
+    <string name="cloud">云端同步 (Supabase)</string>
+    <string name="supabase_url">Supabase URL</string>
+    <string name="supabase_key">Supabase Anon Key</string>
+    <string name="now_time">当前时间</string>
+    <string name="tap_name_hint">点选姓名签到</string>
+    <string name="checkin_time">签到时间</string>
+    <string name="sync_now">立即同步</string>
+    <string name="synced">已同步</string>
+    <string name="sync_off">未配置云端，仅本地保存</string>
+</resources>

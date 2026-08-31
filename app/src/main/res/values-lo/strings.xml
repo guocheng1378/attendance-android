@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">ບັນຊາການເຊັກອິນ</string>
+    <string name="app_subtitle">ລາຍງານການເຂົ້າວຽກລາຍວັນ</string>
+    <string name="tab_checkin">ເຊັກອິນ</string>
+    <string name="tab_stats">ສະຖິຕິ</string>
+    <string name="tab_salary">ເງິນເດືອນ</string>
+    <string name="tab_settings">ຕັ້ງຄ່າ</string>
+    <string name="status_full">ມື້ເຕັມ</string>
+    <string name="status_half">ມື້ຄ້າງ</string>
+    <string name="status_absent">ບໍ່ມາ</string>
+    <string name="save">ບັນທຶກ</string>
+    <string name="saved">ສຳເລັດ!</string>
+    <string name="export_csv">ສົ່ງອອກ CSV</string>
+    <string name="no_data">ຍັງບໍ່ມີຂໍ້ມູນ</string>
+    <string name="total">ລວມ</string>
+    <string name="workers">ຄົນ</string>
+    <string name="late">ມາຊ້າ</string>
+    <string name="early">ອອກໄວ</string>
+    <string name="on_time">ທັນເວລາ</string>
+    <string name="today">ມື້ນີ້</string>
+    <string name="month_summary">ສະຫຼຸບການເຊັກອິນລາຍເດືອນ</string>
+    <string name="detail">ລາຍລະອຽດ</string>
+    <string name="back">ກັບໄປເຊັກອິນ</string>
+    <string name="language">ພາສາ</string>
+    <string name="work_start">ເວລາເຂົ້າວຽກ</string>
+    <string name="work_end">ເວລາອອກວຽກ</string>
+    <string name="employees">ລາຍຊື່ພະນັກງານ</string>
+    <string name="cloud">ຊິງຂໍ້ມູນ (Supabase)</string>
+    <string name="supabase_url">Supabase URL</string>
+    <string name="supabase_key">Supabase Anon Key</string>
+    <string name="now_time">ເວລາປັດຈຸບັນ</string>
+    <string name="tap_name_hint">ແຕະຊື່ເພື່ອເຊັກອິນ</string>
+    <string name="checkin_time">ເວລາເຊັກອິນ</string>
+    <string name="sync_now">ຊິງດຽວນີ້</string>
+    <string name="synced">ຊິງແລ້ວ</string>
+    <string name="sync_off">ຍັງບໍ່ຕັ້ງຄລາວ, ບັນທຶກໄວ້ພຽງເຄື່ອງ</string>
+</resources>
