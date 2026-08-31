@@ -53,7 +53,11 @@ private fun AttendanceScreen() {
                 .fillMaxSize()
                 .safeDrawingPadding()
         ) {
-            Box(Modifier.weight(1f)) {
+            Box(
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
                 when (selectedTab) {
                     1 -> StatsPanel()
                     2 -> SalaryPanel2()
@@ -61,13 +65,15 @@ private fun AttendanceScreen() {
                     else -> CheckInPanel(onOpenSettings = { selectedTab = 3 })
                 }
             }
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                BottomNavBar(selectedTab) { selectedTab = it }
-            }
+        }
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .safeDrawingPadding()
+        ) {
+            BottomNavBar(selectedTab) { selectedTab = it }
         }
     }
 }
