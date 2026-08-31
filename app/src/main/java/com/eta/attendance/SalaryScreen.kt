@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +24,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextField
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -43,7 +43,7 @@ internal fun SalaryPanel2() {
     var range by remember { mutableStateOf(PayRange.MONTH) }
     var anchor by remember { mutableStateOf(System.currentTimeMillis()) }
     val prefs = context.getSharedPreferences("attendance_data", Context.MODE_PRIVATE)
-    var dailyWage by remember { mutableStateOf(prefs.getFloat("daily_wage", 100000f).toDouble()) }
+    var dailyWage by remember { mutableStateOf(prefs.getFloat("daily_wage", 150000f).toDouble()) }
     var wageInput by remember { mutableStateOf(dailyWage.toInt().toString()) }
 
     val empRecords = all.value.filter { it.employeeId == empId }
@@ -85,9 +85,9 @@ internal fun SalaryPanel2() {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GlassIconButton("‹") { anchor = shiftRange(range, anchor, -1) }
+                GlassButton("‹") { anchor = shiftRange(range, anchor, -1) }
                 Text(b.label, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                GlassIconButton("›") { anchor = shiftRange(range, anchor, 1) }
+                GlassButton("›") { anchor = shiftRange(range, anchor, 1) }
             }
         }
 
@@ -131,16 +131,17 @@ internal fun SalaryPanel2() {
         GlassCard(Modifier.fillMaxWidth()) {
             Text("日薪设置（LAK）", fontSize = 13.sp, color = Color.White.copy(alpha = 0.6f))
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
+            TextField(
                 value = wageInput,
                 onValueChange = { wageInput = it },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                label = "日薪",
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(8.dp))
             GlassButton("保存日薪", primary = true, modifier = Modifier.fillMaxWidth()) {
                 dailyWage = wageInput.toDoubleOrNull() ?: dailyWage
                 prefs.edit().putFloat("daily_wage", dailyWage.toFloat()).apply()
+                all.value = AttendanceStore.all(context)
                 Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
             }
         }

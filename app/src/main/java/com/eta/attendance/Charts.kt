@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -14,9 +13,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import top.yukonga.miuix.kmp.basic.Text
 import kotlin.math.max
 
 internal data class BarEntry(val label: String, val value: Double, val highlight: Boolean = false)
@@ -59,12 +58,10 @@ internal fun BarChart(
         Row(Modifier.fillMaxWidth()) {
             entries.forEach { e ->
                 Text(
-                    text = e.label,
+                    e.label,
                     fontSize = 9.sp,
                     color = Color.White.copy(alpha = if (e.highlight) 0.9f else 0.5f),
                     fontWeight = if (e.highlight) FontWeight.Bold else FontWeight.Normal,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
                     modifier = Modifier.weight(1f)
                 )
             }
