@@ -2,13 +2,19 @@ package com.eta.attendance
 
 import android.app.Activity
 import android.content.Context
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
@@ -19,10 +25,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -94,6 +103,148 @@ private fun AttendanceScreen() {
 }
 
 
+// ===================== 通用组件 =====================
+
+/** 玻璃风格确认对话框 */
+@Composable
+private fun GlassConfirmDialog(
+    title: String,
+    message: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val c = LocalAppColors.current
+    Dialog(onDismissRequest = onDismiss) {
+        GlassCard(
+            Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+        ) {
+            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Spacer(Modifier.height(8.dp))
+            Text(message, fontSize = 14.sp, color = c.textSecondary)
+            Spacer(Modifier.height(16.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GlassButton("取消", modifier = Modifier.weight(1f)) { onDismiss() }
+                GlassButton("确定", primary = true, modifier = Modifier.weight(1f)) { onConfirm() }
+            }
+        }
+    }
+}
+
+/** 月度日期选择对话框 */
+@Composable
+private fun MonthDatePicker(
+    currentMonth: String,  // yyyy-MM
+    selectedDate: String,
+    onDateSelected: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val c = LocalAppColors.current
+    val cal = Calendar.getInstance()
+    val parts = currentMonth.split("-")
+    cal.set(parts[0].toInt(), parts[1].toInt() - 1, 1)
+    val nDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+    val firstDow = cal.get(Calendar.DAY_OF_WEEK) - 1 // 0=Sun
+    val today = AttendanceStore.today()
+
+    Dialog(onDismissRequest = onDismiss) {
+        GlassCard(
+            Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+        ) {
+            Text(currentMonth, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.textPrimary, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+            Spacer(Modifier.height(12.dp))
+            // 星期标题
+            Row(Modifier.fillMaxWidth()) {
+                listOf("日", "一", "二", "三", "四", "五", "六").forEach {
+                    Text(it, Modifier.weight(1f), fontSize = 12.sp, color = c.textSecondary, textAlign = TextAlign.Center)
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            // 日期网格
+            val totalCells = firstDow + nDays
+            val rows = (totalCells + 6) / 7
+            for (row in 0 until rows) {
+                Row(Modifier.fillMaxWidth()) {
+                    for (col in 0 until 7) {
+                        val idx = row * 7 + col
+                        val day = idx - firstDow + 1
+                        if (day in 1..nDays) {
+                            val dateStr = String.format(Locale.US, "%s-%02d", currentMonth, day)
+                            val isSelected = dateStr == selectedDate
+                            val isToday = dateStr == today
+                            Box(
+                                Modifier.weight(1f).padding(2.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(
+                                        when {
+                                            isSelected -> MiuixTheme.colorScheme.primary
+                                            isToday -> c.navSelected
+                                            else -> Color.Transparent
+                                        }
+                                    )
+                                    .clickable { onDateSelected(dateStr) }
+                                    .padding(vertical = 6.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "$day", fontSize = 14.sp,
+                                    color = if (isSelected) Color.White else c.textPrimary,
+                                    fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
+                                )
+                            }
+                        } else {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** 带 loading 状态的保存按钮 */
+@Composable
+private fun SavingButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    onClick: suspend () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    var saving by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    GlassButton(
+        text = if (saving) "" else text,
+        primary = true,
+        modifier = modifier,
+        onClick = {
+            if (!saving) {
+                saving = true
+                scope.launch {
+                    try {
+                        onClick()
+                        // 震动反馈
+                        val vib = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+                        vib?.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE))
+                    } finally {
+                        saving = false
+                    }
+                }
+            }
+        }
+    ) {
+        if (saving) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp,
+                )
+            }
+        }
+    }
+}
 
 
 // ===================== 签到页 =====================
@@ -102,7 +253,10 @@ private fun AttendanceScreen() {
 private fun CheckInPanel(onOpenSettings: () -> Unit) {
     val context = LocalContext.current
     val today = AttendanceStore.today()
+    val todayCal = Calendar.getInstance()
+    val currentYm = SimpleDateFormat("yyyy-MM", Locale.US).format(todayCal.time)
     var selDate by remember { mutableStateOf(today) }
+    var showDatePicker by remember { mutableStateOf(false) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     val isToday = selDate == today
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
@@ -115,6 +269,17 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
         AttendanceStore.forDate(context, selDate).forEach { picks[it.employeeId] = it.status }
     }
     val c = LocalAppColors.current
+
+    // 日期选择对话框
+    if (showDatePicker) {
+        val pickerYm = selDate.substring(0, 7)
+        MonthDatePicker(
+            currentMonth = pickerYm,
+            selectedDate = selDate,
+            onDateSelected = { selDate = it; showDatePicker = false },
+            onDismiss = { showDatePicker = false },
+        )
+    }
 
     Column(
         Modifier
@@ -141,16 +306,25 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
             }
         }
         Spacer(Modifier.height(16.dp))
+        // 日期导航：‹ 日期(可点击) ›
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             GlassButton("‹", modifier = Modifier.width(56.dp)) { selDate = shiftDate(selDate, -1) }
-            Text(if (isToday) "今天" else selDate, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(
+                if (isToday) "今天" else selDate,
+                fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                modifier = Modifier.clickable { showDatePicker = true }
+            )
             GlassButton("›", modifier = Modifier.width(56.dp)) { if (selDate < today) selDate = shiftDate(selDate, 1) }
         }
         Spacer(Modifier.height(16.dp))
         Text(context.getString(R.string.tap_name_hint), fontSize = 14.sp, color = Color.White)
         Text(context.getString(R.string.record_count_fmt, AttendanceStore.all(context).size), fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
         Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // 全选按钮横向滚动
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             StatusChip(context.getString(R.string.select_all_full), false) { employees.forEach { picks[it.id] = Status.FULL } }
             StatusChip(context.getString(R.string.select_all_half), false) { employees.forEach { picks[it.id] = Status.HALF } }
             StatusChip(context.getString(R.string.select_all_absent), false) { employees.forEach { picks[it.id] = Status.ABSENT } }
@@ -177,7 +351,8 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
             }
         }
         Spacer(Modifier.height(16.dp))
-        GlassButton(context.getString(R.string.save), primary = true, modifier = Modifier.fillMaxWidth()) {
+        // 保存按钮（带 loading + 震动）
+        SavingButton(context.getString(R.string.save), Modifier.fillMaxWidth()) {
             val hhmm = if (isToday) timeStr.substring(0, 5) else ""
             val records = picks.map { (id, st) ->
                 val isLateForRec = if (isToday) lateNow else isLate(hhmm, Config.workStart(context))
@@ -204,10 +379,14 @@ private fun shiftDate(date: String, delta: Int): String {
 @Composable
 private fun StatsPanel() {
     val context = LocalContext.current
-    val ym = SimpleDateFormat("yyyy-MM", Locale.US).format(Date())
-    val summary = AttendanceStore.monthSummary(context, ym)
-    val employees = remember { Config.employees(context) }
     val c = LocalAppColors.current
+    val employees = remember { Config.employees(context) }
+    // 月份导航
+    var anchorMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val cal = remember(anchorMs) { Calendar.getInstance().apply { timeInMillis = anchorMs } }
+    val ym = remember(cal) { String.format(Locale.US, "%04d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1) }
+    val summary = remember(ym) { AttendanceStore.monthSummary(context, ym) }
+    val allRecords = remember(ym) { AttendanceStore.all(context) }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -215,6 +394,28 @@ private fun StatsPanel() {
     ) {
         Text(context.getString(R.string.month_summary), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
         Spacer(Modifier.height(16.dp))
+        // 月份导航
+        GlassCard(Modifier.fillMaxWidth()) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                GlassButton("‹", modifier = Modifier.width(56.dp)) {
+                    cal.add(Calendar.MONTH, -1); anchorMs = cal.timeInMillis
+                }
+                Text(ym, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+                GlassButton("›", modifier = Modifier.width(56.dp)) {
+                    val now = Calendar.getInstance()
+                    if (cal.get(Calendar.YEAR) < now.get(Calendar.YEAR) ||
+                        cal.get(Calendar.MONTH) < now.get(Calendar.MONTH)
+                    ) {
+                        cal.add(Calendar.MONTH, 1); anchorMs = cal.timeInMillis
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
         GlassCard(Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth()) {
                 Text(context.getString(R.string.employees), Modifier.weight(2f), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
@@ -236,9 +437,8 @@ private fun StatsPanel() {
         GlassCard(Modifier.fillMaxWidth()) {
             Text(context.getString(R.string.month_overview_fmt, ym), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
             Spacer(Modifier.height(8.dp))
-            MonthGrid(employees, AttendanceStore.all(context), ym)
+            MonthGrid(employees, allRecords, ym)
         }
-        Spacer(Modifier.height(16.dp))
         Spacer(Modifier.height(16.dp))
         GlassButton(context.getString(R.string.export_csv), primary = true, modifier = Modifier.fillMaxWidth()) {
             val csv = AttendanceStore.toCsv(context)
@@ -280,6 +480,11 @@ private fun SettingsPanel() {
     var remH by remember { mutableStateOf(Config.reminderHour(context).toString()) }
     var remM by remember { mutableStateOf(Config.reminderMinute(context).toString()) }
     var sub by remember { mutableStateOf(0) }
+    // 异步操作 loading 状态
+    var syncLoading by remember { mutableStateOf(false) }
+    var davUploadLoading by remember { mutableStateOf(false) }
+    var davRestoreLoading by remember { mutableStateOf(false) }
+    var ghImportLoading by remember { mutableStateOf(false) }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -293,8 +498,9 @@ private fun SettingsPanel() {
             SettingEntry(context.getString(R.string.settings_salary), context.getString(R.string.settings_salary_desc)) { sub = 3 }
             SettingEntry(context.getString(R.string.settings_data), context.getString(R.string.settings_data_desc)) { sub = 4 }
         } else {
+            // 改进的返回按钮：← 返回
             Row(verticalAlignment = Alignment.CenterVertically) {
-                GlassButton("‹", modifier = Modifier.width(56.dp)) { sub = 0 }
+                GlassButton("← 返回", modifier = Modifier.width(100.dp)) { sub = 0 }
                 Spacer(Modifier.width(12.dp))
                 Text(when (sub) { 1 -> context.getString(R.string.settings_appearance); 2 -> context.getString(R.string.settings_attendance); 3 -> context.getString(R.string.settings_salary); else -> context.getString(R.string.settings_data) }, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
@@ -352,7 +558,7 @@ private fun SettingsPanel() {
 
         // 考勤规则
         GlassCard(Modifier.fillMaxWidth()) {
-            Text("考勤规则", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Text(context.getString(R.string.attendance_rules), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
             Spacer(Modifier.height(8.dp))
             Text(context.getString(R.string.work_start), fontSize = 12.sp, color = c.textSecondary)
             TextField(value = start, onValueChange = { start = it }, modifier = Modifier.fillMaxWidth())
@@ -373,21 +579,21 @@ private fun SettingsPanel() {
 
         // 未打卡提醒
         GlassCard(Modifier.fillMaxWidth()) {
-            Text("未打卡提醒", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
-            Text("到点检查当天签到，未打卡发通知", fontSize = 11.sp, color = c.textSecondary)
+            Text(context.getString(R.string.reminder_title), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Text(context.getString(R.string.reminder_desc), fontSize = 11.sp, color = c.textSecondary)
             Spacer(Modifier.height(8.dp))
             SwitchPreference(checked = remOn, onCheckedChange = { nv ->
                 remOn = nv
                 Config.saveReminder(context, nv, remH.toIntOrNull() ?: 9, remM.toIntOrNull() ?: 0)
                 if (nv) { Reminder.ensureChannel(context); Reminder.schedule(context) } else Reminder.cancel(context)
-                Toast.makeText(context, if (nv) "已开启提醒" else "已关闭提醒", Toast.LENGTH_SHORT).show()
-            }, title = "每日提醒", summary = "到点检查当天签到，未打卡发通知")
+                Toast.makeText(context, if (nv) context.getString(R.string.reminder_on) else context.getString(R.string.reminder_off), Toast.LENGTH_SHORT).show()
+            }, title = context.getString(R.string.reminder_daily), summary = context.getString(R.string.reminder_desc))
             Spacer(Modifier.height(8.dp))
-            NumField("时(0-23)", remH) { remH = it }
+            NumField(context.getString(R.string.reminder_hour_label), remH) { remH = it }
             Spacer(Modifier.height(6.dp))
-            NumField("分(0-59)", remM) { remM = it }
+            NumField(context.getString(R.string.reminder_min_label), remM) { remM = it }
             Spacer(Modifier.height(8.dp))
-            GlassButton("保存提醒时间", modifier = Modifier.fillMaxWidth()) {
+            GlassButton(context.getString(R.string.reminder_save), modifier = Modifier.fillMaxWidth()) {
                 val h = remH.toIntOrNull()
                 val m = remM.toIntOrNull()
                 if (h == null || m == null || h !in 0..23 || m !in 0..59) {
@@ -395,7 +601,7 @@ private fun SettingsPanel() {
                 } else {
                     Config.saveReminder(context, remOn, h, m)
                     if (remOn) Reminder.schedule(context)
-                    Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.reminder_saved), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -406,17 +612,17 @@ private fun SettingsPanel() {
 
         // 工资规则
         GlassCard(Modifier.fillMaxWidth()) {
-            Text("工资规则", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Text(context.getString(R.string.pay_rules), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
             Spacer(Modifier.height(8.dp))
-            NumField("应出勤天数", expDays) { expDays = it }
-            NumField("平日加班倍率", otW) { otW = it }
-            NumField("周末加班倍率", otWe) { otWe = it }
-            NumField("节日加班倍率", otH) { otH = it }
-            NumField("每次迟到扣款(LAK)", lateDed) { lateDed = it }
-            NumField("餐补(LAK)", meal) { meal = it }
-            NumField("交通补(LAK)", transport) { transport = it }
-            NumField("住房补(LAK)", housing) { housing = it }
-            GlassButton("保存工资规则", modifier = Modifier.fillMaxWidth()) {
+            NumField(context.getString(R.string.expected_days), expDays) { expDays = it }
+            NumField(context.getString(R.string.ot_rate_weekday), otW) { otW = it }
+            NumField(context.getString(R.string.ot_rate_weekend), otWe) { otWe = it }
+            NumField(context.getString(R.string.ot_rate_holiday), otH) { otH = it }
+            NumField(context.getString(R.string.late_deduction), lateDed) { lateDed = it }
+            NumField(context.getString(R.string.meal_allowance), meal) { meal = it }
+            NumField(context.getString(R.string.transport_allowance), transport) { transport = it }
+            NumField(context.getString(R.string.housing_allowance), housing) { housing = it }
+            GlassButton(context.getString(R.string.save_pay_rules), modifier = Modifier.fillMaxWidth()) {
                 Config.savePayRule(
                     context, rule.copy(
                         expectedDays = expDays.toIntOrNull() ?: rule.expectedDays,
@@ -429,15 +635,15 @@ private fun SettingsPanel() {
                         housingAllowance = housing.toDoubleOrNull() ?: rule.housingAllowance,
                     )
                 )
-                Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
             }
         }
         Spacer(Modifier.height(12.dp))
 
         // 员工薪资
         GlassCard(Modifier.fillMaxWidth()) {
-            Text("员工薪资", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
-            Text("日薪/月薪（基普）；月薪>0 时优先按月薪折算", fontSize = 11.sp, color = c.textSecondary)
+            Text(context.getString(R.string.employee_salary), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Text(context.getString(R.string.employee_salary_desc), fontSize = 11.sp, color = c.textSecondary)
             Spacer(Modifier.height(8.dp))
             EmployeeEditor(context)
         }
@@ -448,26 +654,26 @@ private fun SettingsPanel() {
 
         // 数据备份
         GlassCard(Modifier.fillMaxWidth()) {
-            Text("数据备份", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Text(context.getString(R.string.data_backup), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GlassButton("导出备份", modifier = Modifier.weight(1f)) {
+                GlassButton(context.getString(R.string.export_backup), modifier = Modifier.weight(1f)) {
                     val txt = AttendanceStore.exportBackup(context)
                     File(
                         android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
                         "attendance_backup.json"
                     ).writeText(txt)
-                    Toast.makeText(context, "已导出到 Download", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.exported_to_download), Toast.LENGTH_SHORT).show()
                 }
-                GlassButton("导入备份", primary = true, modifier = Modifier.weight(1f)) {
+                GlassButton(context.getString(R.string.import_backup), primary = true, modifier = Modifier.weight(1f)) {
                     val f = File(
                         android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
                         "attendance_backup.json"
                     )
                     if (f.exists()) {
                         val n = AttendanceStore.importBackup(context, f.readText())
-                        Toast.makeText(context, "已导入 $n 条", Toast.LENGTH_SHORT).show()
-                    } else Toast.makeText(context, "未找到备份文件", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.imported_fmt, n), Toast.LENGTH_SHORT).show()
+                    } else Toast.makeText(context, context.getString(R.string.backup_not_found), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -475,27 +681,65 @@ private fun SettingsPanel() {
 
         // WebDAV / 坚果云
         GlassCard(Modifier.fillMaxWidth()) {
-            Text("坚果云 / WebDAV", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Text(context.getString(R.string.webdav_title), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
             Spacer(Modifier.height(8.dp))
-            TextField(value = dUrl, onValueChange = { dUrl = it }, label = "WebDAV 地址", useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth())
+            TextField(value = dUrl, onValueChange = { dUrl = it }, label = context.getString(R.string.webdav_url), useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
-            TextField(value = dUser, onValueChange = { dUser = it }, label = "账号(邮箱)", useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth())
+            TextField(value = dUser, onValueChange = { dUser = it }, label = context.getString(R.string.webdav_user), useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
-            TextField(value = dPass, onValueChange = { dPass = it }, label = "应用密码", useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth())
+            TextField(value = dPass, onValueChange = { dPass = it }, label = context.getString(R.string.webdav_pass), useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
-            TextField(value = dPath, onValueChange = { dPath = it }, label = "远端路径", useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth())
+            TextField(value = dPath, onValueChange = { dPath = it }, label = context.getString(R.string.webdav_path), useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
-            GlassButton("保存 WebDAV", modifier = Modifier.fillMaxWidth()) {
+            GlassButton(context.getString(R.string.save_webdav), modifier = Modifier.fillMaxWidth()) {
                 Config.saveDav(context, dUrl, dUser, dPass, dPath)
-                Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
             }
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GlassButton("上传备份", modifier = Modifier.weight(1f)) {
-                    scope.launch { val ok = AttendanceStore.pushToDav(context); Toast.makeText(context, if (ok) "已上传" else "上传失败", Toast.LENGTH_SHORT).show() }
+                // 上传（带 loading）
+                Box(modifier = Modifier.weight(1f)) {
+                    GlassButton(
+                        text = if (davUploadLoading) "" else context.getString(R.string.upload_backup),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (!davUploadLoading) {
+                            davUploadLoading = true
+                            scope.launch {
+                                try {
+                                    val ok = AttendanceStore.pushToDav(context)
+                                    Toast.makeText(context, if (ok) context.getString(R.string.uploaded) else context.getString(R.string.upload_failed), Toast.LENGTH_SHORT).show()
+                                } finally { davUploadLoading = false }
+                            }
+                        }
+                    }
+                    if (davUploadLoading) {
+                        Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(Modifier.size(20.dp), color = c.textPrimary, strokeWidth = 2.dp)
+                        }
+                    }
                 }
-                GlassButton("从云端恢复", primary = true, modifier = Modifier.weight(1f)) {
-                    scope.launch { val n = AttendanceStore.pullFromDav(context); Toast.makeText(context, if (n >= 0) "恢复 $n 条" else "恢复失败", Toast.LENGTH_SHORT).show() }
+                Box(modifier = Modifier.weight(1f)) {
+                    GlassButton(
+                        text = if (davRestoreLoading) "" else context.getString(R.string.restore_from_cloud),
+                        primary = true,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (!davRestoreLoading) {
+                            davRestoreLoading = true
+                            scope.launch {
+                                try {
+                                    val n = AttendanceStore.pullFromDav(context)
+                                    Toast.makeText(context, if (n >= 0) context.getString(R.string.restored_fmt, n) else context.getString(R.string.restore_failed), Toast.LENGTH_SHORT).show()
+                                } finally { davRestoreLoading = false }
+                            }
+                        }
+                    }
+                    if (davRestoreLoading) {
+                        Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                        }
+                    }
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -504,23 +748,39 @@ private fun SettingsPanel() {
                 autoBackupOn = nv
                 Config.saveAutoBackup(context, nv)
                 if (nv) AutoBackup.schedule(context) else AutoBackup.cancel(context)
-                Toast.makeText(context, if (nv) "已开启自动备份" else "已关闭自动备份", Toast.LENGTH_SHORT).show()
-            }, title = "每日自动备份", summary = "每天自动将考勤数据上传到 WebDAV")
+                Toast.makeText(context, if (nv) context.getString(R.string.auto_backup_on) else context.getString(R.string.auto_backup_off), Toast.LENGTH_SHORT).show()
+            }, title = context.getString(R.string.auto_backup), summary = context.getString(R.string.auto_backup_desc))
         }
         Spacer(Modifier.height(12.dp))
 
         // 从 GitHub 导入
         GlassCard(Modifier.fillMaxWidth()) {
-            Text("从 GitHub 导入考勤", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
-            Text("粘贴 attendance-tracker 备份 JSON 的 raw 链接，按姓名匹配员工并覆盖当月记录", fontSize = 11.sp, color = c.textSecondary)
+            Text(context.getString(R.string.import_from_github), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Text(context.getString(R.string.import_from_github_desc), fontSize = 11.sp, color = c.textSecondary)
             Spacer(Modifier.height(8.dp))
             var gUrl by remember { mutableStateOf("https://raw.githubusercontent.com/guocheng1378/attendance-tracker/main/backup/attendance-2026-08-31_070529.json") }
-            TextField(value = gUrl, onValueChange = { gUrl = it }, label = "数据 URL", useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth())
+            TextField(value = gUrl, onValueChange = { gUrl = it }, label = context.getString(R.string.data_url), useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
-            GlassButton("导入", primary = true, modifier = Modifier.fillMaxWidth()) {
-                scope.launch {
-                    val n = AttendanceStore.importFromTracker(context, gUrl)
-                    Toast.makeText(context, if (n >= 0) "已导入 $n 条" else "导入失败", Toast.LENGTH_SHORT).show()
+            Box {
+                GlassButton(
+                    text = if (ghImportLoading) "" else context.getString(R.string.import_btn),
+                    primary = true,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (!ghImportLoading) {
+                        ghImportLoading = true
+                        scope.launch {
+                            try {
+                                val n = AttendanceStore.importFromTracker(context, gUrl)
+                                Toast.makeText(context, if (n >= 0) context.getString(R.string.imported_fmt, n) else context.getString(R.string.import_failed), Toast.LENGTH_SHORT).show()
+                            } finally { ghImportLoading = false }
+                        }
+                    }
+                }
+                if (ghImportLoading) {
+                    Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    }
                 }
             }
         }
@@ -539,10 +799,26 @@ private fun SettingsPanel() {
                     Config.saveSupabase(context, url, key)
                     Toast.makeText(context, context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
                 }
-                GlassButton(context.getString(R.string.sync_now), primary = true, modifier = Modifier.weight(1f)) {
-                    scope.launch {
-                        val ok = AttendanceStore.pushToSupabase(context)
-                        Toast.makeText(context, context.getString(if (ok) R.string.synced else R.string.sync_off), Toast.LENGTH_SHORT).show()
+                Box(modifier = Modifier.weight(1f)) {
+                    GlassButton(
+                        text = if (syncLoading) "" else context.getString(R.string.sync_now),
+                        primary = true,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (!syncLoading) {
+                            syncLoading = true
+                            scope.launch {
+                                try {
+                                    val ok = AttendanceStore.pushToSupabase(context)
+                                    Toast.makeText(context, context.getString(if (ok) R.string.synced else R.string.sync_off), Toast.LENGTH_SHORT).show()
+                                } finally { syncLoading = false }
+                            }
+                        }
+                    }
+                    if (syncLoading) {
+                        Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                        }
                     }
                 }
             }
@@ -574,6 +850,23 @@ private fun EmployeeEditor(context: Context) {
     val mbMap = remember { mutableStateMapOf<Int, String>() }
     val bnMap = remember { mutableStateMapOf<Int, String>() }
     val adMap = remember { mutableStateMapOf<Int, String>() }
+    // 删除确认对话框
+    var deleteTarget by remember { mutableStateOf<Employee?>(null) }
+    if (deleteTarget != null) {
+        GlassConfirmDialog(
+            title = "删除员工",
+            message = "确定要删除 ${deleteTarget!!.nameZh.ifBlank { deleteTarget!!.nameLo }} 吗？相关考勤记录不会被删除。",
+            onConfirm = {
+                Config.removeEmployee(context, deleteTarget!!.id)
+                dwMap.remove(deleteTarget!!.id); mbMap.remove(deleteTarget!!.id)
+                bnMap.remove(deleteTarget!!.id); adMap.remove(deleteTarget!!.id)
+                base = Config.employees(context)
+                deleteTarget = null
+            },
+            onDismiss = { deleteTarget = null },
+        )
+    }
+
     LaunchedEffect(base) {
         base.forEach { e ->
             if (!dwMap.containsKey(e.id)) dwMap[e.id] = e.dailyWage.toInt().toString()
@@ -586,24 +879,22 @@ private fun EmployeeEditor(context: Context) {
         Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(e.nameZh, Modifier.width(56.dp), fontSize = 14.sp, color = c.textPrimary)
-                GlassButton("删", modifier = Modifier.width(48.dp)) {
-                    Config.removeEmployee(context, e.id)
-                    dwMap.remove(e.id); mbMap.remove(e.id); bnMap.remove(e.id); adMap.remove(e.id)
-                    base = Config.employees(context)
+                GlassButton(context.getString(R.string.delete), modifier = Modifier.width(48.dp)) {
+                    deleteTarget = e
                 }
             }
             Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(value = dwMap[e.id] ?: "", onValueChange = { dwMap[e.id] = it }, label = "日薪", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-                TextField(value = mbMap[e.id] ?: "", onValueChange = { mbMap[e.id] = it }, label = "月薪", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+                TextField(value = dwMap[e.id] ?: "", onValueChange = { dwMap[e.id] = it }, label = context.getString(R.string.field_daily_wage), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+                TextField(value = mbMap[e.id] ?: "", onValueChange = { mbMap[e.id] = it }, label = context.getString(R.string.field_monthly_base), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
             }
             Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(value = bnMap[e.id] ?: "", onValueChange = { bnMap[e.id] = it }, label = "奖金", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-                TextField(value = adMap[e.id] ?: "", onValueChange = { adMap[e.id] = it }, label = "预支", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+                TextField(value = bnMap[e.id] ?: "", onValueChange = { bnMap[e.id] = it }, label = context.getString(R.string.field_bonus), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+                TextField(value = adMap[e.id] ?: "", onValueChange = { adMap[e.id] = it }, label = context.getString(R.string.field_advance), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
             }
         }
     }
     Spacer(Modifier.height(8.dp))
-    GlassButton("保存员工薪资", modifier = Modifier.fillMaxWidth()) {
+    GlassButton(context.getString(R.string.save_employee_salary), modifier = Modifier.fillMaxWidth()) {
         Config.saveEmployees(
             context, base.map { e ->
                 e.copy(
@@ -614,22 +905,22 @@ private fun EmployeeEditor(context: Context) {
                 )
             }
         )
-        Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
     }
     Spacer(Modifier.height(12.dp))
     var nl by remember { mutableStateOf("") }
     var nz by remember { mutableStateOf("") }
     var nd by remember { mutableStateOf("") }
-    Text("添加员工", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+    Text(context.getString(R.string.add_employee), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
     Spacer(Modifier.height(6.dp))
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        TextField(value = nl, onValueChange = { nl = it }, label = "老挝名", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-        TextField(value = nz, onValueChange = { nz = it }, label = "中文名", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+        TextField(value = nl, onValueChange = { nl = it }, label = context.getString(R.string.name_lo), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+        TextField(value = nz, onValueChange = { nz = it }, label = context.getString(R.string.name_zh), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
     }
     Spacer(Modifier.height(6.dp))
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        TextField(value = nd, onValueChange = { nd = it }, label = "日薪", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-        GlassButton("添加", primary = true, modifier = Modifier.width(80.dp)) {
+        TextField(value = nd, onValueChange = { nd = it }, label = context.getString(R.string.field_daily_wage), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+        GlassButton(context.getString(R.string.add), primary = true, modifier = Modifier.width(80.dp)) {
             if (nl.isNotBlank() || nz.isNotBlank()) {
                 Config.addEmployee(context, nl, nz, nd.toDoubleOrNull() ?: 0.0)
                 nl = ""; nz = ""; nd = ""; base = Config.employees(context)

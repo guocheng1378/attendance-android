@@ -18,6 +18,7 @@ import top.yukonga.miuix.kmp.basic.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,19 +49,17 @@ internal fun SalaryPanel2() {
     var empId by remember { mutableStateOf(employees.firstOrNull()?.id ?: -1) }
     var range by remember { mutableStateOf(PayRange.MONTH) }
     var anchor by remember { mutableStateOf(System.currentTimeMillis()) }
-    // 加班/请假临时输入
-    var otWeekday by remember { mutableStateOf("0") }
-    var otWeekend by remember { mutableStateOf("0") }
-    var otHoliday by remember { mutableStateOf("0") }
-    var leaveSick by remember { mutableStateOf("0") }
-    var leavePersonal by remember { mutableStateOf("0") }
-    var leaveAnnual by remember { mutableStateOf("0") }
-
-    // 切换员工时重置加班/请假输入
-    LaunchedEffect(empId) {
-        otWeekday = "0"; otWeekend = "0"; otHoliday = "0"
-        leaveSick = "0"; leavePersonal = "0"; leaveAnnual = "0"
-    }
+    // 加班/请假输入（按员工ID持久化）
+    val otMap = remember { mutableStateMapOf<Int, String>() }
+    val leaveMap = remember { mutableStateMapOf<Int, String>() }
+    fun otW() = otMap[empId]?.split(",")?.getOrNull(0) ?: "0"
+    fun otWe() = otMap[empId]?.split(",")?.getOrNull(1) ?: "0"
+    fun otH() = otMap[empId]?.split(",")?.getOrNull(2) ?: "0"
+    fun lSick() = leaveMap[empId]?.split(",")?.getOrNull(0) ?: "0"
+    fun lPers() = leaveMap[empId]?.split(",")?.getOrNull(1) ?: "0"
+    fun lAnn() = leaveMap[empId]?.split(",")?.getOrNull(2) ?: "0"
+    fun saveOt(a: String, b: String, c2: String) { otMap[empId] = "$a,$b,$c2" }
+    fun saveLeave(a: String, b: String, c2: String) { leaveMap[empId] = "$a,$b,$c2" }
 
     val emp = employees.firstOrNull { it.id == empId }
     val empRecords = allRecords.filter { it.employeeId == empId }
@@ -71,12 +70,12 @@ internal fun SalaryPanel2() {
         inRange, emp?.dailyWage ?: 0.0, emp?.monthlyBase ?: 0.0,
         emp?.bonus ?: 0.0, emp?.advance ?: 0.0
     ).copy(
-        otHoursWeekday = otWeekday.toDoubleOrNull() ?: 0.0,
-        otHoursWeekend = otWeekend.toDoubleOrNull() ?: 0.0,
-        otHoursHoliday = otHoliday.toDoubleOrNull() ?: 0.0,
-        leaveSick = leaveSick.toDoubleOrNull() ?: 0.0,
-        leavePersonal = leavePersonal.toDoubleOrNull() ?: 0.0,
-        leaveAnnual = leaveAnnual.toDoubleOrNull() ?: 0.0,
+        otHoursWeekday = otW().toDoubleOrNull() ?: 0.0,
+        otHoursWeekend = otWe().toDoubleOrNull() ?: 0.0,
+        otHoursHoliday = otH().toDoubleOrNull() ?: 0.0,
+        leaveSick = lSick().toDoubleOrNull() ?: 0.0,
+        leavePersonal = lPers().toDoubleOrNull() ?: 0.0,
+        leaveAnnual = lAnn().toDoubleOrNull() ?: 0.0,
     )
     val pay = SalaryEngine.compute(input, rule)
     val accent = c.palette.accent
@@ -123,15 +122,15 @@ internal fun SalaryPanel2() {
             Text(context.getString(R.string.ot_leave_title), fontSize = 13.sp, color = c.textSecondary)
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(value = otWeekday, onValueChange = { otWeekday = it }, label = context.getString(R.string.ot_weekday_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-                TextField(value = otWeekend, onValueChange = { otWeekend = it }, label = context.getString(R.string.ot_weekend_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-                TextField(value = otHoliday, onValueChange = { otHoliday = it }, label = context.getString(R.string.ot_holiday_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+                TextField(value = otW(), onValueChange = { saveOt(it, otWe(), otH()) }, label = context.getString(R.string.ot_weekday_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+                TextField(value = otWe(), onValueChange = { saveOt(otW(), it, otH()) }, label = context.getString(R.string.ot_weekend_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+                TextField(value = otH(), onValueChange = { saveOt(otW(), otWe(), it) }, label = context.getString(R.string.ot_holiday_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
             }
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(value = leaveSick, onValueChange = { leaveSick = it }, label = context.getString(R.string.leave_sick_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-                TextField(value = leavePersonal, onValueChange = { leavePersonal = it }, label = context.getString(R.string.leave_personal_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-                TextField(value = leaveAnnual, onValueChange = { leaveAnnual = it }, label = context.getString(R.string.leave_annual_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+                TextField(value = lSick(), onValueChange = { saveLeave(it, lPers(), lAnn()) }, label = context.getString(R.string.leave_sick_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+                TextField(value = lPers(), onValueChange = { saveLeave(lSick(), it, lAnn()) }, label = context.getString(R.string.leave_personal_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+                TextField(value = lAnn(), onValueChange = { saveLeave(lSick(), lPers(), it) }, label = context.getString(R.string.leave_annual_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
             }
         }
 
