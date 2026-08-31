@@ -113,6 +113,7 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
         }
         Spacer(Modifier.height(20.dp))
         Text(context.getString(R.string.tap_name_hint), fontSize = 14.sp, color = Color.White)
+        Text("共 ${AttendanceStore.all(context).size} 条记录", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
         Spacer(Modifier.height(8.dp))
         Config.EMPLOYEES.forEach { e ->
             val sel = picks[e.id]
@@ -259,6 +260,29 @@ private fun SettingsPanel() {
     ) {
         Text(context.getString(R.string.tab_settings), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
         Spacer(Modifier.height(16.dp))
+        GlassCard(Modifier.fillMaxWidth()) {
+            Text("数据备份", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = onSurface)
+            Spacer(Modifier.height(8.dp))
+            Text("导出为 JSON；导入读取 Download/attendance_backup.json", fontSize = 11.sp, color = onSurface.copy(alpha = 0.6f))
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GlassButton("导出备份", modifier = Modifier.weight(1f)) {
+                    val txt = AttendanceStore.exportBackup(context)
+                    java.io.File(context.getExternalFilesDir(null), "attendance_backup.json").writeText(txt)
+                    java.io.File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS), "attendance_backup.json").writeText(txt)
+                    Toast.makeText(context, "已导出到 Download", Toast.LENGTH_SHORT).show()
+                }
+                GlassButton("导入备份", primary = true, modifier = Modifier.weight(1f)) {
+                    val f = java.io.File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS), "attendance_backup.json")
+                    if (f.exists()) {
+                        val n = AttendanceStore.importBackup(context, f.readText())
+                        Toast.makeText(context, "已导入 $n 条", Toast.LENGTH_SHORT).show()
+                    } else Toast.makeText(context, "未找到备份文件", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+
 
         GlassCard(Modifier.fillMaxWidth()) {
             Text(context.getString(R.string.language), fontSize = 14.sp, color = onSurface)
