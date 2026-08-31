@@ -37,6 +37,9 @@ object Config {
     private const val KEY_DAV_USER = "dav_user"
     private const val KEY_DAV_PASS = "dav_pass"
     private const val KEY_DAV_PATH = "dav_path"
+    private const val KEY_REMINDER_ON = "reminder_on"
+    private const val KEY_REMINDER_HOUR = "reminder_hour"
+    private const val KEY_REMINDER_MIN = "reminder_min"
 
     private val DEFAULT_EMPLOYEES = listOf(
         Employee(1, "ແຫນ", "盘"),
@@ -182,4 +185,15 @@ object Config {
     }
     fun davEnabled(c: Context): Boolean =
         davUrl(c).isNotBlank() && davUser(c).isNotBlank()
+
+    fun reminderEnabled(c: Context): Boolean = sp(c).getBoolean(KEY_REMINDER_ON, false)
+    fun reminderHour(c: Context): Int = sp(c).getInt(KEY_REMINDER_HOUR, 9)
+    fun reminderMinute(c: Context): Int = sp(c).getInt(KEY_REMINDER_MIN, 0)
+    fun saveReminder(c: Context, enabled: Boolean, hour: Int, minute: Int) {
+        sp(c).edit()
+            .putBoolean(KEY_REMINDER_ON, enabled)
+            .putInt(KEY_REMINDER_HOUR, hour.coerceIn(0, 23))
+            .putInt(KEY_REMINDER_MIN, minute.coerceIn(0, 59))
+            .apply()
+    }
 }

@@ -48,19 +48,25 @@ private fun AttendanceScreen() {
     var selectedTab by remember { mutableIntStateOf(0) }
     Box(Modifier.fillMaxSize()) {
         GlassBackground()
-        when (selectedTab) {
-            1 -> StatsPanel()
-            2 -> SalaryPanel2()
-            3 -> SettingsPanel()
-            else -> CheckInPanel(onOpenSettings = { selectedTab = 3 })
-        }
         Box(
             Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .fillMaxSize()
+                .safeDrawingPadding()
         ) {
-            BottomNavBar(selectedTab) { selectedTab = it }
+            when (selectedTab) {
+                1 -> StatsPanel()
+                2 -> SalaryPanel2()
+                3 -> SettingsPanel()
+                else -> CheckInPanel(onOpenSettings = { selectedTab = 3 })
+            }
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                BottomNavBar(selectedTab) { selectedTab = it }
+            }
         }
     }
 }
@@ -236,6 +242,9 @@ private fun SettingsPanel() {
     var meal by remember { mutableStateOf(rule.mealAllowance.toString()) }
     var transport by remember { mutableStateOf(rule.transportAllowance.toString()) }
     var housing by remember { mutableStateOf(rule.housingAllowance.toString()) }
+    var remOn by remember { mutableStateOf(Config.reminderEnabled(context)) }
+    var remH by remember { mutableStateOf(Config.reminderHour(context).toString()) }
+    var remM by remember { mutableStateOf(Config.reminderMinute(context).toString()) }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -302,6 +311,33 @@ private fun SettingsPanel() {
             GlassButton(context.getString(R.string.save), modifier = Modifier.fillMaxWidth()) {
                 Config.saveWorkTime(context, start, end)
                 Toast.makeText(context, context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+
+        // 未打卡提醒
+        GlassCard(Modifier.fillMaxWidth()) {
+            Text("未打卡提醒", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Text("到点检查当天签到，未打卡发通知", fontSize = 11.sp, color = c.textSecondary)
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("每日提醒", fontSize = 13.sp, color = c.textPrimary)
+                StatusChip(if (remOn) "已开启" else "已关闭", remOn) {
+                    remOn = !remOn
+                    Config.saveReminder(context, remOn, remH.toIntOrNull() ?: 9, remM.toIntOrNull() ?: 0)
+                    if (remOn) { Reminder.ensureChannel(context); Reminder.schedule(context) } else Reminder.cancel(context)
+                    Toast.makeText(context, if (remOn) "已开启提醒" else "已关闭提醒", Toast.LENGTH_SHORT).show()
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            NumField("时(0-23)", remH) { remH = it }
+            Spacer(Modifier.height(6.dp))
+            NumField("分(0-59)", remM) { remM = it }
+            Spacer(Modifier.height(8.dp))
+            GlassButton("保存提醒时间", modifier = Modifier.fillMaxWidth()) {
+                Config.saveReminder(context, remOn, remH.toIntOrNull() ?: 9, remM.toIntOrNull() ?: 0)
+                if (remOn) Reminder.schedule(context)
+                Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
             }
         }
         Spacer(Modifier.height(12.dp))
