@@ -42,6 +42,9 @@ import androidx.compose.ui.unit.sp
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
+import top.yukonga.miuix.kmp.nav.core.NavController
 
 /** 动态渐变背景：随配色变化，深色下整体压暗 */
 @Composable
@@ -185,9 +188,9 @@ internal fun StatusChip(label: String, selected: Boolean, onClick: () -> Unit) {
     }
 }
 
-/** 悬浮液态玻璃底部导航：半透明 + 大圆角 + 悬浮阴影 + 滑动胶囊指示器 */
+/** 悬浮液态玻璃底部导航：miuix-blur 真背景模糊 + 大圆角 + 悬浮阴影 + 滑动胶囊指示器 */
 @Composable
-internal fun BottomNavBar(selectedTab: Int, onSelect: (Int) -> Unit) {
+internal fun BottomNavBar(navController: NavController) {
     val context = LocalContext.current
     val c = LocalAppColors.current
     val labels = listOf(
@@ -196,50 +199,25 @@ internal fun BottomNavBar(selectedTab: Int, onSelect: (Int) -> Unit) {
         context.getString(R.string.tab_salary),
         context.getString(R.string.tab_settings),
     )
+    val routes = listOf(Route.CheckIn, Route.Stats, Route.Salary, Route.Settings)
+    val current = navController.backStack.lastOrNull()
+    val selectedTab = routes.indexOfFirst { it == current }.coerceAtLeast(0)
+    val backdrop = rememberLayerBackdrop { drawContent() }
     val pill = RoundedCornerShape(26.dp)
     val selPill = RoundedCornerShape(20.dp)
     val indicator by animateFloatAsState(selectedTab.toFloat(), animationSpec = tween(260), label = "navInd")
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .shadow(18.dp, pill, ambientColor = Color.Black.copy(alpha = 0.12f), spotColor = Color.Black.copy(alpha = 0.28f))
-    ) {
-        BoxWithConstraints(
-            Modifier
-                .fillMaxWidth()
-                .clip(pill)
-                .background(c.navFill)
-                .border(1.dp, c.glassBorder, pill)
-                .padding(6.dp)
-        ) {
+    Box(Modifier.fillMaxWidth().shadow(18.dp, pill, ambientColor = Color.Black.copy(alpha = 0.12f), spotColor = Color.Black.copy(alpha = 0.28f))) {
+        BoxWithConstraints(Modifier.fillMaxWidth().clip(pill).background(c.navFill).border(1.dp, c.glassBorder, pill).padding(6.dp).layerBackdrop(backdrop)) {
             val itemW = maxWidth / labels.size
-            Box(
-                Modifier
-                    .offset(x = itemW * indicator)
-                    .width(itemW)
-                    .fillMaxHeight()
-                    .clip(selPill)
-                    .background(c.navSelected)
-            )
+            Box(Modifier.offset(x = itemW * indicator).width(itemW).fillMaxHeight().clip(selPill).background(c.navSelected))
             Row(Modifier.fillMaxWidth()) {
-                labels.forEachIndexed { i, label ->
+                labels.forEachIndexed { idx, label ->
                     val interactionSource = remember { MutableInteractionSource() }
                     val pressed by interactionSource.collectIsPressedAsState()
-                    val scale by animateFloatAsState(if (pressed) 0.85f else 1f, label = "navScale")
-                    val fg = if (selectedTab == i) MiuixTheme.colorScheme.primary else c.textSecondary
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .scale(scale)
-                            .clip(selPill)
-                            .clickable(interactionSource = interactionSource, indication = null) { onSelect(i) }
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            label, fontSize = 14.sp, color = fg,
-                            fontWeight = if (selectedTab == i) FontWeight.Bold else FontWeight.Normal
-                        )
+                    val scale by animateFloatAsState(if (pressed) 0.85f else 1f, label = "navScale" + idx)
+                    val fg = if (selectedTab == idx) MiuixTheme.colorScheme.primary else c.textSecondary
+                    Box(modifier = Modifier.weight(1f).scale(scale).clip(selPill).clickable(interactionSource = interactionSource, indication = null) { navController.replace(routes[idx]) }.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
+                        Text(label, fontSize = 14.sp, color = fg, fontWeight = if (selectedTab == idx) FontWeight.Bold else FontWeight.Normal)
                     }
                 }
             }

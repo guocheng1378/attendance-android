@@ -32,6 +32,21 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlinx.serialization.Serializable
+import top.yukonga.miuix.kmp.nav.core.NavController
+import top.yukonga.miuix.kmp.nav.core.NavDisplay
+import top.yukonga.miuix.kmp.nav.core.NavKey
+import top.yukonga.miuix.kmp.nav.core.rememberNavBackStack
+import top.yukonga.miuix.kmp.preference.ArrowPreference
+import top.yukonga.miuix.kmp.preference.SwitchPreference
+
+@Serializable
+sealed interface Route : NavKey {
+    @Serializable data object CheckIn : Route
+    @Serializable data object Stats : Route
+    @Serializable data object Salary : Route
+    @Serializable data object Settings : Route
+}
 
 @Composable
 fun AttendanceApp() {
@@ -45,38 +60,22 @@ fun AttendanceApp() {
 
 @Composable
 private fun AttendanceScreen() {
-    var selectedTab by remember { mutableIntStateOf(0) }
+    val backStack = rememberNavBackStack<Route>(Route.CheckIn)
+    val navController = remember { NavController(backStack) }
     Box(Modifier.fillMaxSize()) {
         GlassBackground()
-        Column(
-            Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-        ) {
-            Box(
-                Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            ) {
-                when (selectedTab) {
-                    1 -> StatsPanel()
-                    2 -> SalaryPanel2()
-                    3 -> SettingsPanel()
-                    else -> CheckInPanel(onOpenSettings = { selectedTab = 3 })
-                }
-            }
+        NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
+            entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
+            entry<Route.Stats> { StatsPanel() }
+            entry<Route.Salary> { SalaryPanel2() }
+            entry<Route.Settings> { SettingsPanel() }
         }
-        Box(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .safeDrawingPadding()
-        ) {
-            BottomNavBar(selectedTab) { selectedTab = it }
+        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
+            BottomNavBar(navController)
         }
     }
 }
+
 
 // ===================== 签到页 =====================
 
@@ -352,15 +351,12 @@ private fun SettingsPanel() {
             Text("未打卡提醒", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
             Text("到点检查当天签到，未打卡发通知", fontSize = 11.sp, color = c.textSecondary)
             Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("每日提醒", fontSize = 13.sp, color = c.textPrimary)
-                StatusChip(if (remOn) "已开启" else "已关闭", remOn) {
-                    remOn = !remOn
-                    Config.saveReminder(context, remOn, remH.toIntOrNull() ?: 9, remM.toIntOrNull() ?: 0)
-                    if (remOn) { Reminder.ensureChannel(context); Reminder.schedule(context) } else Reminder.cancel(context)
-                    Toast.makeText(context, if (remOn) "已开启提醒" else "已关闭提醒", Toast.LENGTH_SHORT).show()
-                }
-            }
+            SwitchPreference(checked = remOn, onCheckedChange = { nv ->
+                remOn = nv
+                Config.saveReminder(context, nv, remH.toIntOrNull() ?: 9, remM.toIntOrNull() ?: 0)
+                if (nv) { Reminder.ensureChannel(context); Reminder.schedule(context) } else Reminder.cancel(context)
+                Toast.makeText(context, if (nv) "已开启提醒" else "已关闭提醒", Toast.LENGTH_SHORT).show()
+            }, title = "每日提醒", summary = "到点检查当天签到，未打卡发通知")
             Spacer(Modifier.height(8.dp))
             NumField("时(0-23)", remH) { remH = it }
             Spacer(Modifier.height(6.dp))
@@ -520,20 +516,7 @@ private fun SettingsPanel() {
 
 @Composable
 private fun SettingEntry(title: String, summary: String, onClick: () -> Unit) {
-    val c = LocalAppColors.current
-    GlassCard(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-        Row(
-            Modifier.fillMaxWidth().clickable(onClick = onClick),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
-                Text(summary, fontSize = 12.sp, color = c.textSecondary)
-            }
-            Text("›", fontSize = 22.sp, color = c.textSecondary)
-        }
-    }
+    ArrowPreference(title = title, summary = summary, onClick = onClick, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp))
 }
 
 @Composable
