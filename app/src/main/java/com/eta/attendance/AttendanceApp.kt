@@ -57,7 +57,7 @@ private fun AttendanceScreen() {
         GlassBackground()
         when (selectedTab) {
             1 -> StatsPanel()
-            2 -> SalaryPanel()
+            2 -> SalaryPanel2()
             3 -> SettingsPanel()
             else -> CheckInPanel(onOpenSettings = { selectedTab = 3 })
         }
@@ -148,7 +148,7 @@ private fun isLate(hhmmss: String, workStart: String): Boolean =
     runCatching { hhmmss.substring(0, 5) > workStart }.getOrDefault(false)
 
 @Composable
-private fun StatusChip(label: String, selected: Boolean, onClick: () -> Unit) {
+internal fun StatusChip(label: String, selected: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(12.dp)
     val bg by animateColorAsState(if (selected) Color(0xFF3482FF) else Color.White.copy(alpha = 0.5f), label = "chipBg")
     val fg = if (selected) Color.White else Color(0xCC1A1D2B)
@@ -349,7 +349,7 @@ private fun GlassBackground() {
 }
 
 @Composable
-private fun GlassCard(
+internal fun GlassCard(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(20.dp),
     contentPadding: PaddingValues = PaddingValues(16.dp),
@@ -368,7 +368,7 @@ private fun GlassCard(
 }
 
 @Composable
-private fun GlassButton(
+internal fun GlassButton(
     text: String,
     primary: Boolean = false,
     modifier: Modifier = Modifier,
@@ -400,7 +400,7 @@ private fun GlassButton(
 }
 
 @Composable
-private fun GlassIconButton(
+internal fun GlassIconButton(
     icon: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
