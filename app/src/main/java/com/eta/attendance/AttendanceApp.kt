@@ -48,20 +48,21 @@ private fun AttendanceScreen() {
     var selectedTab by remember { mutableIntStateOf(0) }
     Box(Modifier.fillMaxSize()) {
         GlassBackground()
-        Box(
+        Column(
             Modifier
                 .fillMaxSize()
                 .safeDrawingPadding()
         ) {
-            when (selectedTab) {
-                1 -> StatsPanel()
-                2 -> SalaryPanel2()
-                3 -> SettingsPanel()
-                else -> CheckInPanel(onOpenSettings = { selectedTab = 3 })
+            Box(Modifier.weight(1f)) {
+                when (selectedTab) {
+                    1 -> StatsPanel()
+                    2 -> SalaryPanel2()
+                    3 -> SettingsPanel()
+                    else -> CheckInPanel(onOpenSettings = { selectedTab = 3 })
+                }
             }
             Box(
                 Modifier
-                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
@@ -124,6 +125,13 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
         Spacer(Modifier.height(16.dp))
         Text(context.getString(R.string.tap_name_hint), fontSize = 14.sp, color = Color.White)
         Text("共 ${AttendanceStore.all(context).size} 条记录", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
+        Spacer(Modifier.height(8.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatusChip("全选全天", false) { employees.forEach { picks[it.id] = Status.FULL } }
+            StatusChip("全选半天", false) { employees.forEach { picks[it.id] = Status.HALF } }
+            StatusChip("全选缺勤", false) { employees.forEach { picks[it.id] = Status.ABSENT } }
+            StatusChip("清空", false) { picks.clear() }
+        }
         Spacer(Modifier.height(8.dp))
         employees.forEach { e ->
             val sel = picks[e.id]
@@ -245,13 +253,28 @@ private fun SettingsPanel() {
     var remOn by remember { mutableStateOf(Config.reminderEnabled(context)) }
     var remH by remember { mutableStateOf(Config.reminderHour(context).toString()) }
     var remM by remember { mutableStateOf(Config.reminderMinute(context).toString()) }
+    var sub by remember { mutableStateOf(0) }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
             .padding(16.dp).padding(bottom = 110.dp)
     ) {
-        Text(context.getString(R.string.tab_settings), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-        Spacer(Modifier.height(16.dp))
+        if (sub == 0) {
+            Text(context.getString(R.string.tab_settings), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Spacer(Modifier.height(16.dp))
+            SettingEntry("外观与语言", "主题、配色、界面语言") { sub = 1 }
+            SettingEntry("考勤与提醒", "上下班时间、未打卡提醒") { sub = 2 }
+            SettingEntry("工资与员工", "工资规则、员工薪资") { sub = 3 }
+            SettingEntry("数据与同步", "本地备份、WebDAV、GitHub、Supabase") { sub = 4 }
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                GlassButton("‹", modifier = Modifier.width(56.dp)) { sub = 0 }
+                Spacer(Modifier.width(12.dp))
+                Text(when (sub) { 1 -> "外观与语言"; 2 -> "考勤与提醒"; 3 -> "工资与员工"; else -> "数据与同步" }, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            }
+            Spacer(Modifier.height(16.dp))
+            when (sub) {
+                1 -> {
 
         // 外观：主题模式 + 配色
         GlassCard(Modifier.fillMaxWidth()) {
@@ -298,6 +321,9 @@ private fun SettingsPanel() {
         }
         Spacer(Modifier.height(12.dp))
 
+                }
+                2 -> {
+
         // 考勤规则
         GlassCard(Modifier.fillMaxWidth()) {
             Text("考勤规则", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
@@ -342,6 +368,9 @@ private fun SettingsPanel() {
         }
         Spacer(Modifier.height(12.dp))
 
+                }
+                3 -> {
+
         // 工资规则
         GlassCard(Modifier.fillMaxWidth()) {
             Text("工资规则", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
@@ -380,6 +409,9 @@ private fun SettingsPanel() {
             EmployeeEditor(context)
         }
         Spacer(Modifier.height(12.dp))
+
+                }
+                4 -> {
 
         // 数据备份
         GlassCard(Modifier.fillMaxWidth()) {
@@ -473,6 +505,27 @@ private fun SettingsPanel() {
                     }
                 }
             }
+        }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingEntry(title: String, summary: String, onClick: () -> Unit) {
+    val c = LocalAppColors.current
+    GlassCard(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        Row(
+            Modifier.fillMaxWidth().clickable(onClick = onClick),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+                Text(summary, fontSize = 12.sp, color = c.textSecondary)
+            }
+            Text("›", fontSize = 22.sp, color = c.textSecondary)
         }
     }
 }
