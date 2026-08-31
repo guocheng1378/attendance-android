@@ -103,7 +103,7 @@ object AttendanceStore {
         val sb = StringBuilder()
         sb.append("date,employeeId,nameZh,nameLo,status,checkInTime,late\n")
         all(c).sortedWith(compareBy({ it.date }, { it.employeeId })).forEach { r ->
-            val e = Config.EMPLOYEES.firstOrNull { it.id == r.employeeId }
+            val e = Config.employees(c).firstOrNull { it.id == r.employeeId }
             sb.append(r.date).append(',')
                 .append(r.employeeId).append(',')
                 .append(e?.nameZh ?: "").append(',')
@@ -169,5 +169,39 @@ object AttendanceStore {
         return runCatching {
             client.newCall(req).execute().use { it.isSuccessful }
         }.getOrDefault(false)
+    }
+
+    /** WebDAV 上传备份（坚果云） */
+    suspend fun pushToDav(c: Context): Boolean {
+        if (!Config.davEnabled(c)) return false
+        val req = Request.Builder().url(davFullUrl(c))
+            .header("Authorization", davAuth(c))
+            .put(exportBackup(c).toRequestBody(JSON))
+            .build()
+        return runCatching { client.newCall(req).execute().use { it.isSuccessful } }.getOrDefault(false)
+    }
+
+    /** WebDAV 下载并导入，返回条数（-1 失败） */
+    suspend fun pullFromDav(c: Context): Int {
+        if (!Config.davEnabled(c)) return -1
+        val req = Request.Builder().url(davFullUrl(c)).header("Authorization", davAuth(c)).get().build()
+        return runCatching {
+            client.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) return -1
+                val body = resp.body?.string() ?: return -1
+                importBackup(c, body)
+            }
+        }.getOrDefault(-1)
+    }
+
+    private fun davFullUrl(c: Context): String {
+        val base = Config.davUrl(c).trimEnd('/')
+        val path = Config.davPath(c)
+        return base + (if (path.startsWith("/")) path else "/$path")
+    }
+
+    private fun davAuth(c: Context): String {
+        val cred = Config.davUser(c) + ":" + Config.davPass(c)
+        return "Basic " + android.util.Base64.encodeToString(cred.toByteArray(), android.util.Base64.NO_WRAP)
     }
 }
