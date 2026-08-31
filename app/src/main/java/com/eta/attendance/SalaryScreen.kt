@@ -80,9 +80,9 @@ internal fun SalaryPanel2() {
         // 全员总工资（先出总额）
         GlassCard(Modifier.fillMaxWidth()) {
             Text("本月全员实发合计", fontSize = 13.sp, color = c.textPrimary.copy(alpha = 0.85f))
-            Text("${totalNet.toLong()} LAK", fontSize = 34.sp, fontWeight = FontWeight.Bold, color = accent)
+            Text("${k(totalNet)} LAK", fontSize = 34.sp, fontWeight = FontWeight.Bold, color = accent)
             Spacer(Modifier.height(10.dp))
-            SumRow("应发合计", "${totalGross.toLong()} LAK")
+            SumRow("应发合计", "${k(totalGross)} LAK")
             SumRow("预支合计", "-${totalAdv.toLong()} LAK", neg = true)
             SumRow("人数", "${pays.size} 人")
         }
@@ -103,21 +103,22 @@ internal fun SalaryPanel2() {
                 ) {
                     Column {
                         Text(p.nameZh.ifBlank { p.nameLo }, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+                        Text(p.nameLo, fontSize = 13.sp, color = c.textPrimary.copy(alpha = 0.8f))
                         Text(
                             "出勤 ${fmtNum(p.attend)} / 应出勤 ${p.expectedDays} 天（${p.fullDays}全 ${p.halfDays}半 ${p.absentDays}缺）",
                             fontSize = 12.sp, color = c.textPrimary.copy(alpha = 0.8f)
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        Text("${p.net.toLong()}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = accent)
+                        Text("${k(p.net)}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = accent)
                         Text("实发 LAK", fontSize = 11.sp, color = c.textPrimary.copy(alpha = 0.7f))
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                SumRow("月薪", "${p.monthly.toLong()} LAK")
-                SumRow("奖金", "${p.bonus.toLong()} LAK")
-                if (p.penaltyDays > 0) SumRow("扣减（${p.penaltyDays} 天）", "-${p.penalty.toLong()} LAK", neg = true)
-                SumRow("应发", "${p.gross.toLong()} LAK")
+                SumRow("月薪", "${k(p.monthly)} LAK")
+                SumRow("奖金", "${k(p.bonus)} LAK")
+                if (p.penaltyDays > 0) SumRow("扣减（${p.penaltyDays} 天）", "-${k(p.penalty)} LAK", neg = true)
+                SumRow("应发", "${k(p.gross)} LAK")
                 Spacer(Modifier.height(8.dp))
                 TextField(
                     value = advMap[p.employeeId] ?: (if (p.advance > 0) p.advance.toInt().toString() else ""),
@@ -166,6 +167,8 @@ private fun SumRow(label: String, value: String, neg: Boolean = false) {
     }
 }
 
+private fun k(x: Double): Long = Math.round(x / 1000.0) * 1000L
+
 private fun fmtNum(d: Double): String =
     if (d == d.toLong().toDouble()) d.toLong().toString() else d.toString()
 
@@ -190,8 +193,8 @@ private fun exportMonth(context: Context, ym: String, pays: List<MonthPay>) {
         sb.append(csvEsc(p.nameZh)).append(',').append(csvEsc(p.nameLo)).append(',')
             .append(p.fullDays).append(',').append(p.halfDays).append(',').append(p.absentDays).append(',')
             .append(fmtNum(p.attend)).append(',').append(p.expectedDays).append(',')
-            .append(p.monthly.toLong()).append(',').append(p.bonus.toLong()).append(',').append(p.penaltyDays).append(',').append(p.penalty.toLong()).append(',')
-            .append(p.gross.toLong()).append(',').append(p.advance.toLong()).append(',').append(p.net.toLong()).append(',')
+            .append(p.monthly.toLong()).append(',').append(p.bonus.toLong()).append(',').append(p.penaltyDays).append(',').append(k(p.penalty)).append(',')
+            .append(k(p.gross)).append(',').append(p.advance.toLong()).append(',').append(k(p.net)).append(',')
             .append(csvEsc(p.remark)).append('\n')
     }
     val dir = java.io.File(context.getExternalFilesDir(null), "exports")
