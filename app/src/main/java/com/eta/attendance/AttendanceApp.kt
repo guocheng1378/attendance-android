@@ -27,6 +27,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Settings
 import java.io.File
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -67,16 +68,18 @@ private fun AttendanceScreen() {
 @Composable
 private fun CheckInPanel(onOpenSettings: () -> Unit) {
     val context = LocalContext.current
+    val today = AttendanceStore.today()
+    var selDate by remember { mutableStateOf(today) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val isToday = selDate == today
     LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
     val timeStr = SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(now))
-    val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(now))
-    val lateNow = isLate(timeStr, Config.workStart(context))
-    val today = AttendanceStore.today()
+    val lateNow = isToday && isLate(timeStr, Config.workStart(context))
     val employees = remember { Config.employees(context) }
     val picks = remember { mutableStateMapOf<Int, Status>() }
-    LaunchedEffect(today) {
-        AttendanceStore.forDate(context, today).forEach { picks[it.employeeId] = it.status }
+    LaunchedEffect(selDate) {
+        picks.clear()
+        AttendanceStore.forDate(context, selDate).forEach { picks[it.employeeId] = it.status }
     }
     val c = LocalAppColors.current
 
@@ -96,13 +99,21 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
         }
         Spacer(Modifier.height(20.dp))
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(timeStr, fontSize = 46.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Text(
-                "$dateStr · " + context.getString(if (lateNow) R.string.late else R.string.on_time),
-                fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f)
-            )
+            if (isToday) {
+                Text(timeStr, fontSize = 46.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("$selDate · " + context.getString(if (lateNow) R.string.late else R.string.on_time), fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f))
+            } else {
+                Text(selDate, fontSize = 34.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("补录模式", fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f))
+            }
         }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            GlassButton("‹", modifier = Modifier.width(56.dp)) { selDate = shiftDate(selDate, -1) }
+            Text(if (isToday) "今天" else selDate, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            GlassButton("›", modifier = Modifier.width(56.dp)) { if (selDate < today) selDate = shiftDate(selDate, 1) }
+        }
+        Spacer(Modifier.height(16.dp))
         Text(context.getString(R.string.tap_name_hint), fontSize = 14.sp, color = Color.White)
         Text("共 ${AttendanceStore.all(context).size} 条记录", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
         Spacer(Modifier.height(8.dp))
@@ -127,9 +138,9 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
         }
         Spacer(Modifier.height(16.dp))
         GlassButton(context.getString(R.string.save), primary = true, modifier = Modifier.fillMaxWidth()) {
-            val hhmm = timeStr.substring(0, 5)
+            val hhmm = if (isToday) timeStr.substring(0, 5) else ""
             picks.forEach { (id, st) ->
-                AttendanceStore.upsert(context, AttendanceRecord(id, today, st, hhmm, lateNow && st == Status.FULL))
+                AttendanceStore.upsert(context, AttendanceRecord(id, selDate, st, hhmm, lateNow && st == Status.FULL))
             }
             Toast.makeText(context, context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
         }
@@ -138,6 +149,13 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
 
 private fun isLate(hhmmss: String, workStart: String): Boolean =
     runCatching { hhmmss.substring(0, 5) > workStart }.getOrDefault(false)
+
+private fun shiftDate(date: String, delta: Int): String {
+    val c = Calendar.getInstance()
+    runCatching { c.time = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(date) ?: c.time }
+    c.add(Calendar.DAY_OF_MONTH, delta)
+    return SimpleDateFormat("yyyy-MM-dd", Locale.US).format(c.time)
+}
 
 // ===================== 统计页 =====================
 
