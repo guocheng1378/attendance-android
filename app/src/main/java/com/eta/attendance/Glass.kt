@@ -128,6 +128,7 @@ internal fun GlassCard(
             .shadow(14.dp, shape, ambientColor = Color.Black.copy(alpha = 0.10f), spotColor = Color.Black.copy(alpha = 0.22f))
             .clip(shape)
             .then(base)
+            .wrapContentHeight()
             .background(
                 Brush.verticalGradient(
                     0f to c.glassHighlight.copy(alpha = if (c.isDark) 0.16f else 0.5f),
