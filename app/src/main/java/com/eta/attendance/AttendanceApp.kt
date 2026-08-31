@@ -62,131 +62,29 @@ fun AttendanceApp() {
 
 @Composable
 private fun AttendanceScreen() {
-    val backStack = rememberNavBackStack<Route>(Route.CheckIn)
-    val navController = remember { NavController(backStack) }
-    val c = LocalAppColors.current
-    val backdrop = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
-    Box(Modifier.fillMaxSize()) {
-        CompositionLocalProvider(LocalBackdrop provides backdrop) {
-            Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
-                GlassBackground()
-                NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
-                    entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
-                    entry<Route.Stats> { StatsPanel() }
-                    entry<Route.Salary> { SalaryPanel2() }
-                    entry<Route.Settings> { SettingsPanel() }
-                }
-            }
-        }
-        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
-            BottomNavBar(navController, backdrop)
-        }
-    }
-}
-
-
-// ===================== 签到页 =====================
-
-@Composable
-private fun CheckInPanel(onOpenSettings: () -> Unit) {
-    val context = LocalContext.current
-    val today = AttendanceStore.today()
-    var selDate by remember { mutableStateOf(today) }
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    val isToday = selDate == today
-    LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); delay(1000) } }
-    val timeStr = SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(now))
-    val lateNow = isToday && isLate(timeStr, Config.workStart(context))
-    val employees = remember { Config.employees(context) }
-    val picks = remember { mutableStateMapOf<Int, Status>() }
-    LaunchedEffect(selDate) {
-        picks.clear()
-        AttendanceStore.forDate(context, selDate).forEach { picks[it.employeeId] = it.status }
-    }
-    val c = LocalAppColors.current
-
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-            .padding(bottom = 110.dp)
-    ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Column {
-                Text(context.getString(R.string.app_name), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(context.getString(R.string.app_subtitle), fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f))
-            }
-            GlassIconButton(MiuixIcons.Settings, onOpenSettings)
-        }
-        Spacer(Modifier.height(20.dp))
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            if (isToday) {
-                Text(timeStr, fontSize = 46.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("$selDate · " + context.getString(if (lateNow) R.string.late else R.string.on_time), fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f))
-            } else {
-                Text(selDate, fontSize = 34.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("补录模式", fontSize = 14.sp, color = Color.White.copy(alpha = 0.9f))
-            }
-        }
-        Spacer(Modifier.height(16.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            GlassButton("‹", modifier = Modifier.width(56.dp)) { selDate = shiftDate(selDate, -1) }
-            Text(if (isToday) "今天" else selDate, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            GlassButton("›", modifier = Modifier.width(56.dp)) { if (selDate < today) selDate = shiftDate(selDate, 1) }
-        }
-        Spacer(Modifier.height(16.dp))
-        Text(context.getString(R.string.tap_name_hint), fontSize = 14.sp, color = Color.White)
-        Text("共 ${AttendanceStore.all(context).size} 条记录", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
-        Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatusChip("全选全天", false) { employees.forEach { picks[it.id] = Status.FULL } }
-            StatusChip("全选半天", false) { employees.forEach { picks[it.id] = Status.HALF } }
-            StatusChip("全选缺勤", false) { employees.forEach { picks[it.id] = Status.ABSENT } }
-            StatusChip("清空", false) { picks.clear() }
-        }
-        Spacer(Modifier.height(8.dp))
-        employees.forEach { e ->
-            val sel = picks[e.id]
-            GlassCard(
-                Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                contentPadding = PaddingValues(12.dp)
-            ) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Column {
-                        Text(e.nameLo, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
-                        Text(e.nameZh, fontSize = 13.sp, color = c.textSecondary)
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        StatusChip(context.getString(R.string.status_full), sel == Status.FULL) { picks[e.id] = Status.FULL }
-                        StatusChip(context.getString(R.string.status_half), sel == Status.HALF) { picks[e.id] = Status.HALF }
-                        StatusChip(context.getString(R.string.status_absent), sel == Status.ABSENT) { picks[e.id] = Status.ABSENT }
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(16.dp))
-        GlassButton(context.getString(R.string.save), primary = true, modifier = Modifier.fillMaxWidth()) {
-            val hhmm = if (isToday) timeStr.substring(0, 5) else ""
-            picks.forEach { (id, st) ->
-                AttendanceStore.upsert(context, AttendanceRecord(id, selDate, st, hhmm, lateNow && st == Status.FULL))
-            }
-            Toast.makeText(context, context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
-        }
-    }
-}
-
-private fun isLate(hhmmss: String, workStart: String): Boolean =
-    runCatching { hhmmss.substring(0, 5) > workStart }.getOrDefault(false)
-
-private fun shiftDate(date: String, delta: Int): String {
-    val c = Calendar.getInstance()
-    runCatching { c.time = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(date) ?: c.time }
-    c.add(Calendar.DAY_OF_MONTH, delta)
-    return SimpleDateFormat("yyyy-MM-dd", Locale.US).format(c.time)
-}
-
-// ===================== 统计页 =====================
+	val backStack = rememberNavBackStack<Route>(Route.CheckIn)
+	val navController = remember { NavController(backStack) }
+	val c = LocalAppColors.current
+	val backdrop = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
+	Box(Modifier.fillMaxSize()) {
+		CompositionLocalProvider(LocalBackdrop provides backdrop) {
+			// background is the ONLY thing captured into the backdrop layer (offscreen)
+			Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
+				GlassBackground()
+			}
+			// content samples the backdrop as a sibling, no feedback loop
+			NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
+				entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
+				entry<Route.Stats> { StatsPanel() }
+				entry<Route.Salary> { SalaryPanel2() }
+				entry<Route.Settings> { SettingsPanel() }
+			}
+		}
+		Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
+			BottomNavBar(navController, backdrop)
+		}
+	}
+} 统计页 =====================
 
 @Composable
 private fun StatsPanel() {
