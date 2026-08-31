@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -191,6 +192,12 @@ private fun StatsPanel() {
                 }
             }
         }
+        GlassCard(Modifier.fillMaxWidth()) {
+            Text("月历总览 $ym", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Spacer(Modifier.height(8.dp))
+            MonthGrid(employees, AttendanceStore.all(context), ym)
+        }
+        Spacer(Modifier.height(16.dp))
         Spacer(Modifier.height(16.dp))
         GlassButton(context.getString(R.string.export_csv), primary = true, modifier = Modifier.fillMaxWidth()) {
             val csv = AttendanceStore.toCsv(context)
@@ -481,6 +488,47 @@ private fun EmployeeEditor(context: Context) {
             if (nl.isNotBlank() || nz.isNotBlank()) {
                 Config.addEmployee(context, nl, nz, nd.toDoubleOrNull() ?: 0.0)
                 nl = ""; nz = ""; nd = ""; base = Config.employees(context)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MonthGrid(employees: List<Employee>, recs: List<AttendanceRecord>, ym: String) {
+    val c = LocalAppColors.current
+    val grid = HashMap<Int, HashMap<Int, AttendanceRecord>>()
+    recs.forEach { r ->
+        if (r.date.startsWith(ym)) {
+            val d = r.date.substring(8).toIntOrNull() ?: return@forEach
+            grid.getOrPut(r.employeeId) { HashMap() }[d] = r
+        }
+    }
+    val parts = ym.split("-")
+    val cal = Calendar.getInstance()
+    cal.set(parts[0].toInt(), parts[1].toInt() - 1, 1)
+    val nDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+    Column(Modifier.horizontalScroll(rememberScrollState())) {
+        Row {
+            Text("员工", Modifier.width(72.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            (1..nDays).forEach { Text("$it", Modifier.width(28.dp), fontSize = 11.sp, color = c.textSecondary) }
+        }
+        Spacer(Modifier.height(4.dp))
+        employees.forEach { e ->
+            Row(Modifier.padding(vertical = 2.dp)) {
+                Text(e.nameZh, Modifier.width(72.dp), fontSize = 12.sp, color = c.textPrimary)
+                val byDay = grid[e.id]
+                (1..nDays).forEach { d ->
+                    val r = byDay?.get(d)
+                    val sym: String
+                    val col: Color
+                    when (r?.status) {
+                        Status.FULL -> { if (r.late) { sym = "迟"; col = Color(0xFFFFB74D) } else { sym = "√"; col = Color(0xFF4CAF50) } }
+                        Status.HALF -> { sym = "◇"; col = Color(0xFF64B5F6) }
+                        Status.ABSENT -> { sym = "×"; col = Color(0xFFEF5350) }
+                        null -> { sym = "·"; col = c.textSecondary.copy(alpha = 0.4f) }
+                    }
+                    Text(sym, Modifier.width(28.dp), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = col)
+                }
             }
         }
     }
