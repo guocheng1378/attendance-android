@@ -29,7 +29,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.window.WindowDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
@@ -114,12 +113,12 @@ private fun GlassConfirmDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    WindowDialog(
-        title = title,
-        summary = message,
-        show = true,
-        onDismissRequest = onDismiss,
-    ) {
+    GlassDialog(onDismiss) {
+        val cc = LocalAppColors.current
+        Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = cc.textPrimary)
+        Spacer(Modifier.height(8.dp))
+        Text(message, fontSize = 14.sp, color = cc.textSecondary)
+        Spacer(Modifier.height(16.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             GlassButton("取消", modifier = Modifier.weight(1f)) { onDismiss() }
             GlassButton("确定", primary = true, modifier = Modifier.weight(1f)) { onConfirm() }
@@ -127,7 +126,23 @@ private fun GlassConfirmDialog(
     }
 }
 
-/** 月度日期选择对话框 (WindowDialog) */
+/** 基于 androidx Dialog 的通用玻璃对话框（不依赖导航 dispatcher，避免 WindowDialog 崩溃） */
+@Composable
+private fun GlassDialog(onDismiss: () -> Unit, content: @Composable () -> Unit) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Box(
+            Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f)).clickable { onDismiss() },
+            contentAlignment = Alignment.Center,
+        ) {
+            GlassCard(Modifier.fillMaxWidth().padding(horizontal = 24.dp)) { content() }
+        }
+    }
+}
+
+/** 月度日期选择对话框 */
 @Composable
 private fun MonthDatePicker(
     currentMonth: String,  // yyyy-MM
@@ -143,11 +158,9 @@ private fun MonthDatePicker(
     val firstDow = cal.get(Calendar.DAY_OF_WEEK) - 1 // 0=Sun
     val today = AttendanceStore.today()
 
-    WindowDialog(
-        title = currentMonth,
-        show = true,
-        onDismissRequest = onDismiss,
-    ) {
+    GlassDialog(onDismiss) {
+        Text(currentMonth, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+        Spacer(Modifier.height(8.dp))
         // 星期标题
         Row(Modifier.fillMaxWidth()) {
             listOf("日", "一", "二", "三", "四", "五", "六").forEach {
@@ -602,33 +615,16 @@ private fun SettingsPanel() {
                 }
                 3 -> {
 
-        // 工资规则
+        // 工资规则（说明）
         GlassCard(Modifier.fillMaxWidth()) {
-            Text(context.getString(R.string.pay_rules), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Text("工资规则", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
             Spacer(Modifier.height(8.dp))
-            NumField(context.getString(R.string.expected_days), expDays) { expDays = it }
-            NumField(context.getString(R.string.ot_rate_weekday), otW) { otW = it }
-            NumField(context.getString(R.string.ot_rate_weekend), otWe) { otWe = it }
-            NumField(context.getString(R.string.ot_rate_holiday), otH) { otH = it }
-            NumField(context.getString(R.string.late_deduction), lateDed) { lateDed = it }
-            NumField(context.getString(R.string.meal_allowance), meal) { meal = it }
-            NumField(context.getString(R.string.transport_allowance), transport) { transport = it }
-            NumField(context.getString(R.string.housing_allowance), housing) { housing = it }
-            GlassButton(context.getString(R.string.save_pay_rules), modifier = Modifier.fillMaxWidth()) {
-                Config.savePayRule(
-                    context, rule.copy(
-                        expectedDays = expDays.toIntOrNull() ?: rule.expectedDays,
-                        otRateWeekday = otW.toDoubleOrNull() ?: rule.otRateWeekday,
-                        otRateWeekend = otWe.toDoubleOrNull() ?: rule.otRateWeekend,
-                        otRateHoliday = otH.toDoubleOrNull() ?: rule.otRateHoliday,
-                        lateDeduction = lateDed.toDoubleOrNull() ?: rule.lateDeduction,
-                        mealAllowance = meal.toDoubleOrNull() ?: rule.mealAllowance,
-                        transportAllowance = transport.toDoubleOrNull() ?: rule.transportAllowance,
-                        housingAllowance = housing.toDoubleOrNull() ?: rule.housingAllowance,
-                    )
-                )
-                Toast.makeText(context, context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
-            }
+            Text("• 仅按月薪计薪，无日薪/加班/补贴/奖金/扣款", fontSize = 13.sp, color = c.textSecondary)
+            Text("• 应出勤天数 = 当月总天数 − 2", fontSize = 13.sp, color = c.textSecondary)
+            Text("• 出勤折算 = 全天×1 + 半天×0.5", fontSize = 13.sp, color = c.textSecondary)
+            Text("• 出勤 < 应出勤：扣 1 天工资；出勤 < 应出勤÷2：扣 2 天工资", fontSize = 13.sp, color = c.textSecondary)
+            Text("• 一天工资 = 月薪 ÷ 应出勤天数", fontSize = 13.sp, color = c.textSecondary)
+            Text("• 实发 = 月薪 − 扣减 − 当月预支", fontSize = 13.sp, color = c.textSecondary)
         }
         Spacer(Modifier.height(12.dp))
 
@@ -838,71 +834,45 @@ private fun NumField(label: String, value: String, onChange: (String) -> Unit) {
 private fun EmployeeEditor(context: Context) {
     val c = LocalAppColors.current
     var base by remember { mutableStateOf(Config.employees(context)) }
-    val dwMap = remember { mutableStateMapOf<Int, String>() }
     val mbMap = remember { mutableStateMapOf<Int, String>() }
-    val bnMap = remember { mutableStateMapOf<Int, String>() }
-    val adMap = remember { mutableStateMapOf<Int, String>() }
-    // 删除确认对话框
     var deleteTarget by remember { mutableStateOf<Employee?>(null) }
     if (deleteTarget != null) {
+        val t = deleteTarget!!
         GlassConfirmDialog(
-            title = "删除员工",
-            message = "确定要删除 ${deleteTarget!!.nameZh.ifBlank { deleteTarget!!.nameLo }} 吗？相关考勤记录不会被删除。",
+            title = context.getString(R.string.delete),
+            message = "\u786e\u5b9a\u8981\u5220\u9664 " + t.nameZh.ifBlank { t.nameLo } + " \u5417\uff1f\u76f8\u5173\u8003\u52e4\u8bb0\u5f55\u4e0d\u4f1a\u88ab\u5220\u9664\u3002",
             onConfirm = {
-                Config.removeEmployee(context, deleteTarget!!.id)
-                dwMap.remove(deleteTarget!!.id); mbMap.remove(deleteTarget!!.id)
-                bnMap.remove(deleteTarget!!.id); adMap.remove(deleteTarget!!.id)
+                Config.removeEmployee(context, t.id)
+                mbMap.remove(t.id)
                 base = Config.employees(context)
                 deleteTarget = null
             },
             onDismiss = { deleteTarget = null },
         )
     }
-
     LaunchedEffect(base) {
         base.forEach { e ->
-            if (!dwMap.containsKey(e.id)) dwMap[e.id] = e.dailyWage.toInt().toString()
             if (!mbMap.containsKey(e.id)) mbMap[e.id] = if (e.monthlyBase > 0) e.monthlyBase.toInt().toString() else ""
-            if (!bnMap.containsKey(e.id)) bnMap[e.id] = if (e.bonus > 0) e.bonus.toInt().toString() else ""
-            if (!adMap.containsKey(e.id)) adMap[e.id] = if (e.advance > 0) e.advance.toInt().toString() else ""
         }
     }
     base.forEach { e ->
         Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(e.nameZh, Modifier.width(56.dp), fontSize = 14.sp, color = c.textPrimary)
-                GlassButton(context.getString(R.string.delete), modifier = Modifier.width(48.dp)) {
-                    deleteTarget = e
-                }
+                Text(e.nameZh.ifBlank { e.nameLo }, Modifier.weight(1f), fontSize = 14.sp, color = c.textPrimary)
+                GlassButton(context.getString(R.string.delete), modifier = Modifier.width(64.dp)) { deleteTarget = e }
             }
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(value = dwMap[e.id] ?: "", onValueChange = { dwMap[e.id] = it }, label = context.getString(R.string.field_daily_wage), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-                TextField(value = mbMap[e.id] ?: "", onValueChange = { mbMap[e.id] = it }, label = context.getString(R.string.field_monthly_base), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-            }
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(value = bnMap[e.id] ?: "", onValueChange = { bnMap[e.id] = it }, label = context.getString(R.string.field_bonus), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-                TextField(value = adMap[e.id] ?: "", onValueChange = { adMap[e.id] = it }, label = context.getString(R.string.field_advance), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-            }
+            TextField(value = mbMap[e.id] ?: "", onValueChange = { mbMap[e.id] = it }, label = context.getString(R.string.field_monthly_base), useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
         }
     }
     Spacer(Modifier.height(8.dp))
     GlassButton(context.getString(R.string.save_employee_salary), modifier = Modifier.fillMaxWidth()) {
-        Config.saveEmployees(
-            context, base.map { e ->
-                e.copy(
-                    dailyWage = dwMap[e.id]?.toDoubleOrNull() ?: e.dailyWage,
-                    monthlyBase = mbMap[e.id]?.toDoubleOrNull() ?: 0.0,
-                    bonus = bnMap[e.id]?.toDoubleOrNull() ?: 0.0,
-                    advance = adMap[e.id]?.toDoubleOrNull() ?: 0.0
-                )
-            }
-        )
+        Config.saveEmployees(context, base.map { e -> e.copy(monthlyBase = mbMap[e.id]?.toDoubleOrNull() ?: e.monthlyBase) })
         Toast.makeText(context, context.getString(R.string.saved), Toast.LENGTH_SHORT).show()
     }
     Spacer(Modifier.height(12.dp))
     var nl by remember { mutableStateOf("") }
     var nz by remember { mutableStateOf("") }
-    var nd by remember { mutableStateOf("") }
+    var nm by remember { mutableStateOf("") }
     Text(context.getString(R.string.add_employee), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
     Spacer(Modifier.height(6.dp))
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -911,11 +881,11 @@ private fun EmployeeEditor(context: Context) {
     }
     Spacer(Modifier.height(6.dp))
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        TextField(value = nd, onValueChange = { nd = it }, label = context.getString(R.string.field_daily_wage), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+        TextField(value = nm, onValueChange = { nm = it }, label = context.getString(R.string.field_monthly_base), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
         GlassButton(context.getString(R.string.add), primary = true, modifier = Modifier.width(80.dp)) {
             if (nl.isNotBlank() || nz.isNotBlank()) {
-                Config.addEmployee(context, nl, nz, nd.toDoubleOrNull() ?: 0.0)
-                nl = ""; nz = ""; nd = ""; base = Config.employees(context)
+                Config.addEmployee(context, nl, nz, nm.toDoubleOrNull() ?: 0.0)
+                nl = ""; nz = ""; nm = ""; base = Config.employees(context)
             }
         }
     }

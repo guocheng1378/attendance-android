@@ -32,6 +32,7 @@ object Palettes {
         Palette("sunset", "暖阳", Color(0xFFFF7A45), Color(0xFFFF8E53), Color(0xFFFF5C8A), Color(0xFFB14BFF), Color(0xFFFFB088), Color(0xFFFFE08A), Color(0xFFFF9EB8)),
         Palette("forest", "青绿", Color(0xFF12B886), Color(0xFF06D6A0), Color(0xFF1FA97A), Color(0xFF3D9BFF), Color(0xFF6EE7C0), Color(0xFFD6F9E6), Color(0xFF9BE8D0)),
         Palette("grape", "葡萄", Color(0xFF8B5CF6), Color(0xFF7B5CFF), Color(0xFFB14BFF), Color(0xFF4C6BFF), Color(0xFFB79CFF), Color(0xFFFFD1F0), Color(0xFFA0C4FF)),
+        Palette("mono", "黑白", Color(0xFFBDBDBD), Color(0xFF2B2B2B), Color(0xFF141414), Color(0xFF000000), Color(0xFFFFFFFF), Color(0xFF4A4A4A), Color(0xFF8A8A8A)),
     )
     fun byId(id: String): Palette = ALL.firstOrNull { it.id == id } ?: ALL[0]
 }

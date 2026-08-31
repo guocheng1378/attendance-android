@@ -175,16 +175,40 @@ object Config {
         sp(c).edit().putString(KEY_EMPLOYEES, arr.toString()).apply()
     }
 
-    fun addEmployee(c: Context, nameLo: String, nameZh: String, dailyWage: Double): Int {
+    fun addEmployee(c: Context, nameLo: String, nameZh: String, monthly: Double): Int {
         val list = employees(c).toMutableList()
         val id = (list.maxOfOrNull { it.id } ?: 0) + 1
-        list.add(Employee(id, nameLo.trim(), nameZh.trim(), "", dailyWage, 0.0, 0.0))
+        list.add(Employee(id, nameLo.trim(), nameZh.trim(), "", 0.0, monthly, 0.0, 0.0))
         saveEmployees(c, list)
         return id
     }
 
     fun removeEmployee(c: Context, id: Int) {
         saveEmployees(c, employees(c).filter { it.id != id })
+    }
+
+    // 预支 / 备注：按 员工×月份(yyyy-MM) 存储
+    private const val KEY_ADV_REMARK = "adv_remark"
+    private fun advRemarkRoot(c: Context): JSONObject {
+        val raw = sp(c).getString(KEY_ADV_REMARK, null) ?: return JSONObject()
+        return runCatching { JSONObject(raw) }.getOrDefault(JSONObject())
+    }
+    private fun advRemarkChild(c: Context, empId: Int, ym: String): JSONObject {
+        return advRemarkRoot(c).optJSONObject("$empId|$ym") ?: JSONObject()
+    }
+    fun getAdvance(c: Context, empId: Int, ym: String): Double =
+        advRemarkChild(c, empId, ym).optDouble("adv", 0.0)
+    fun getRemark(c: Context, empId: Int, ym: String): String =
+        advRemarkChild(c, empId, ym).optString("remark", "")
+    fun setAdvance(c: Context, empId: Int, ym: String, v: Double) {
+        val root = advRemarkRoot(c); val key = "$empId|$ym"
+        val o = root.optJSONObject(key) ?: JSONObject(); o.put("adv", v); root.put(key, o)
+        sp(c).edit().putString(KEY_ADV_REMARK, root.toString()).apply()
+    }
+    fun setRemark(c: Context, empId: Int, ym: String, v: String) {
+        val root = advRemarkRoot(c); val key = "$empId|$ym"
+        val o = root.optJSONObject(key) ?: JSONObject(); o.put("remark", v); root.put(key, o)
+        sp(c).edit().putString(KEY_ADV_REMARK, root.toString()).apply()
     }
 
     // Supabase（敏感数据用加密存储）

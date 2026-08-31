@@ -1,112 +1,96 @@
 package com.eta.attendance
 
 import kotlin.math.max
-
-/** 请假类型 */
-enum class LeaveType { NONE, PERSONAL, SICK, ANNUAL }
+import java.util.Calendar
 
 /**
- * 全局工资规则（在设置页配置）。金额单位：基普 LAK。
+ * 全局工资规则（保留以兼容旧存储；新算法不再使用加班/补贴/扣款等字段）。
+ * 金额单位：基普 LAK。
  */
 data class PayRule(
-    val expectedDays: Int = 26,            // 应出勤天数（月薪折算基数）
-    val workHoursPerDay: Double = 8.0,     // 每日工时（用于折算加班时薪）
-    val otRateWeekday: Double = 1.5,       // 平日加班倍率
-    val otRateWeekend: Double = 2.0,       // 周末加班倍率
-    val otRateHoliday: Double = 3.0,       // 节日加班倍率
-    val lateDeduction: Double = 10000.0,   // 每次迟到扣款
-    val lateGraceMinutes: Int = 5,         // 迟到宽限分钟
-    val sickPayFactor: Double = 0.5,       // 病假计薪比例
-    val personalPayFactor: Double = 0.0,   // 事假计薪比例
-    val annualPayFactor: Double = 1.0,     // 年假计薪比例
-    val mealAllowance: Double = 0.0,       // 餐补（每周期）
-    val transportAllowance: Double = 0.0,  // 交通补
-    val housingAllowance: Double = 0.0,    // 住房补
+    val expectedDays: Int = 26,
+    val workHoursPerDay: Double = 8.0,
+    val otRateWeekday: Double = 1.5,
+    val otRateWeekend: Double = 2.0,
+    val otRateHoliday: Double = 3.0,
+    val lateDeduction: Double = 10000.0,
+    val lateGraceMinutes: Int = 5,
+    val sickPayFactor: Double = 0.5,
+    val personalPayFactor: Double = 0.0,
+    val annualPayFactor: Double = 1.0,
+    val mealAllowance: Double = 0.0,
+    val transportAllowance: Double = 0.0,
+    val housingAllowance: Double = 0.0,
 )
 
-/** 某员工某周期的算薪输入 */
-data class PayInput(
-    val dailyWage: Double,
-    val monthlyBase: Double = 0.0,         // >0 则按月薪折算，否则按日薪×出勤
-    val bonus: Double = 0.0,
-    val advance: Double = 0.0,
-    val fullDays: Int = 0,
-    val halfDays: Int = 0,
-    val absentDays: Int = 0,
-    val lateCount: Int = 0,
-    val otHoursWeekday: Double = 0.0,
-    val otHoursWeekend: Double = 0.0,
-    val otHoursHoliday: Double = 0.0,
-    val leavePersonal: Double = 0.0,       // 请假天数
-    val leaveSick: Double = 0.0,
-    val leaveAnnual: Double = 0.0,
-    val extraAllowance: Double = 0.0,
-)
-
-/** 算薪结果明细 */
-data class PayBreakdown(
-    val attendDays: Double,
-    val basePay: Double,
-    val overtimePay: Double,
-    val allowance: Double,
-    val bonus: Double,
+/** 单员工某月工资计算结果（简化模型：月薪 + 阈值扣减 + 预支 + 备注） */
+data class MonthPay(
+    val employeeId: Int,
+    val nameZh: String,
+    val nameLo: String,
+    val monthly: Double,
+    val daysInMonth: Int,
+    val expectedDays: Int,
+    val fullDays: Int,
+    val halfDays: Int,
+    val absentDays: Int,
+    val attend: Double,
+    val dailyRate: Double,
+    val penaltyDays: Int,
+    val penalty: Double,
+    val gross: Double,
     val advance: Double,
-    val deduction: Double,
-    val netPay: Double,
+    val remark: String,
+    val net: Double,
 )
 
 /**
- * 工资计算引擎：纯逻辑，无 UI 依赖，便于单测与复用。
+ * 工资计算引擎（简化版，参考 attendance-tracker 并按需求调整）：
+ *  - 只按月薪计薪，无日薪/加班/补贴/奖金/扣款。
+ *  - 应出勤天数 = 当月总天数 - FREE_DAYS(2)。
+ *  - 出勤折算 = 全天×1 + 半天×0.5。
+ *  - 出勤 < 应出勤÷2 → 扣 2 天工资；出勤 < 应出勤 → 扣 1 天工资；否则不扣。
+ *  - 一天工资 = 月薪 ÷ 应出勤天数。
+ *  - 应发 = 月薪 - 扣减；实发 = 应发 - 当月预支。
  */
 object SalaryEngine {
+    const val FREE_DAYS = 2
 
-    fun compute(i: PayInput, r: PayRule): PayBreakdown {
-        val attendDays = i.fullDays + i.halfDays * 0.5
-        val hourly = if (r.workHoursPerDay > 0) i.dailyWage / r.workHoursPerDay else 0.0
-
-        val basePay = if (i.monthlyBase > 0) {
-            val exp = max(1, r.expectedDays)
-            // 缺勤全额不计薪；请假按各自计薪比例折算未计薪天数
-            val unpaid = i.absentDays +
-                i.leavePersonal * (1 - r.personalPayFactor) +
-                i.leaveSick * (1 - r.sickPayFactor) +
-                i.leaveAnnual * (1 - r.annualPayFactor)
-            i.monthlyBase / exp * (exp - unpaid).coerceAtLeast(0.0)
-        } else {
-            i.dailyWage * attendDays
-        }
-
-        val overtimePay = (i.otHoursWeekday * r.otRateWeekday +
-            i.otHoursWeekend * r.otRateWeekend +
-            i.otHoursHoliday * r.otRateHoliday) * hourly
-
-        val allowance = r.mealAllowance + r.transportAllowance + r.housingAllowance + i.extraAllowance
-        val deduction = i.lateCount * r.lateDeduction
-        val netPay = basePay + overtimePay + allowance + i.bonus - deduction - i.advance
-
-        return PayBreakdown(attendDays, basePay, overtimePay, allowance, i.bonus, i.advance, deduction, netPay)
+    fun daysInMonth(ym: String): Int {
+        val p = ym.split("-")
+        val y = p.getOrNull(0)?.toIntOrNull() ?: return 30
+        val m = p.getOrNull(1)?.toIntOrNull() ?: return 30
+        val cal = Calendar.getInstance()
+        cal.set(y, m - 1, 1)
+        return cal.getActualMaximum(Calendar.DAY_OF_MONTH)
     }
 
-    /** 从考勤记录聚合出天数/迟到部分，再叠加薪资参数得到完整 PayInput */
-    fun aggregate(records: List<AttendanceRecord>, dailyWage: Double, monthlyBase: Double = 0.0, bonus: Double = 0.0, advance: Double = 0.0): PayInput {
-        var full = 0; var half = 0; var absent = 0; var late = 0
-        records.forEach { rec ->
-            when (rec.status) {
-                Status.FULL -> full++
-                Status.HALF -> half++
-                Status.ABSENT -> absent++
-            }
-            if (rec.late) late++
+    fun compute(
+        emp: Employee,
+        ym: String,
+        full: Int,
+        half: Int,
+        absent: Int,
+        advance: Double,
+        remark: String,
+    ): MonthPay {
+        val dim = daysInMonth(ym)
+        val expected = max(1, dim - FREE_DAYS)
+        val monthly = emp.monthlyBase
+        val attend = full + half * 0.5
+        val dailyRate = if (expected > 0) monthly / expected else 0.0
+        val penaltyDays = when {
+            attend < expected / 2.0 -> 2
+            attend < expected -> 1
+            else -> 0
         }
-        return PayInput(
-            dailyWage = dailyWage,
-            monthlyBase = monthlyBase,
-            bonus = bonus,
-            advance = advance,
-            fullDays = full,
-            halfDays = half,
-            absentDays = absent,
-            lateCount = late,
+        val penalty = dailyRate * penaltyDays
+        val gross = (monthly - penalty).coerceAtLeast(0.0)
+        val net = gross - advance
+        return MonthPay(
+            emp.id, emp.nameZh, emp.nameLo, monthly, dim, expected,
+            full, half, absent, attend, dailyRate, penaltyDays, penalty,
+            gross, advance, remark, net,
         )
     }
 }

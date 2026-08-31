@@ -9,14 +9,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -29,277 +26,179 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextField
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-
-internal enum class PayRange { DAY, MONTH, YEAR }
-
-private data class RB(val start: String, val end: String, val label: String)
 
 @Composable
 internal fun SalaryPanel2() {
     val context = LocalContext.current
     val c = LocalAppColors.current
-    // 每次进入组合时刷新数据
-    var allRecords by remember { mutableStateOf(AttendanceStore.all(context)) }
-    var employees by remember { mutableStateOf(Config.employees(context)) }
-    var rule by remember { mutableStateOf(Config.payRule(context)) }
-    var empId by remember { mutableStateOf(employees.firstOrNull()?.id ?: -1) }
-    var range by remember { mutableStateOf(PayRange.MONTH) }
-    var anchor by remember { mutableStateOf(System.currentTimeMillis()) }
-    // 加班/请假输入（按员工ID持久化）
-    val otMap = remember { mutableStateMapOf<Int, String>() }
-    val leaveMap = remember { mutableStateMapOf<Int, String>() }
-    fun otW() = otMap[empId]?.split(",")?.getOrNull(0) ?: "0"
-    fun otWe() = otMap[empId]?.split(",")?.getOrNull(1) ?: "0"
-    fun otH() = otMap[empId]?.split(",")?.getOrNull(2) ?: "0"
-    fun lSick() = leaveMap[empId]?.split(",")?.getOrNull(0) ?: "0"
-    fun lPers() = leaveMap[empId]?.split(",")?.getOrNull(1) ?: "0"
-    fun lAnn() = leaveMap[empId]?.split(",")?.getOrNull(2) ?: "0"
-    fun saveOt(a: String, b: String, c2: String) { otMap[empId] = "$a,$b,$c2" }
-    fun saveLeave(a: String, b: String, c2: String) { leaveMap[empId] = "$a,$b,$c2" }
+    val employees = remember { Config.employees(context) }
+    var ym by remember { mutableStateOf(SimpleDateFormat("yyyy-MM", Locale.US).format(Date())) }
+    // 预支 / 备注编辑缓存（切换月份时重建）
+    val advMap = remember(ym) { mutableStateMapOf<Int, String>() }
+    val rmMap = remember(ym) { mutableStateMapOf<Int, String>() }
 
-    val emp = employees.firstOrNull { it.id == empId }
-    val empRecords = allRecords.filter { it.employeeId == empId }
-    val b = rangeBounds(range, anchor)
-    val inRange = empRecords.filter { it.date >= b.start && it.date < b.end }
-
-    val input = SalaryEngine.aggregate(
-        inRange, emp?.dailyWage ?: 0.0, emp?.monthlyBase ?: 0.0,
-        emp?.bonus ?: 0.0, emp?.advance ?: 0.0
-    ).copy(
-        otHoursWeekday = otW().toDoubleOrNull() ?: 0.0,
-        otHoursWeekend = otWe().toDoubleOrNull() ?: 0.0,
-        otHoursHoliday = otH().toDoubleOrNull() ?: 0.0,
-        leaveSick = lSick().toDoubleOrNull() ?: 0.0,
-        leavePersonal = lPers().toDoubleOrNull() ?: 0.0,
-        leaveAnnual = lAnn().toDoubleOrNull() ?: 0.0,
-    )
-    val pay = SalaryEngine.compute(input, rule)
+    val summary = AttendanceStore.monthSummary(context, ym)
+    val pays = employees.map { e ->
+        val arr = summary[e.id] ?: IntArray(3)
+        SalaryEngine.compute(
+            emp = e, ym = ym,
+            full = arr[0], half = arr[1], absent = arr[2],
+            advance = advMap[e.id]?.toDoubleOrNull() ?: Config.getAdvance(context, e.id, ym),
+            remark = rmMap[e.id] ?: Config.getRemark(context, e.id, ym),
+        )
+    }
+    val totalGross = pays.sumOf { it.gross }
+    val totalAdv = pays.sumOf { it.advance }
+    val totalNet = pays.sumOf { it.net }
     val accent = c.palette.accent
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(16.dp).padding(bottom = 110.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .padding(16.dp).padding(bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(context.getString(R.string.salary_title), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Text("考勤工资核算", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
 
-        if (employees.isNotEmpty()) {
-            GlassCard(Modifier.fillMaxWidth()) {
-                Text(context.getString(R.string.employee_label), fontSize = 13.sp, color = c.textSecondary)
-                Spacer(Modifier.height(8.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    employees.forEach { e ->
-                        StatusChip(e.nameZh, e.id == empId) { empId = e.id }
-                    }
-                }
-            }
-        }
-
+        // 月份切换
         GlassCard(Modifier.fillMaxWidth()) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PayRange.entries.forEach { r ->
-                    StatusChip(payRangeLabel(r, context), r == range) { range = r }
-                }
-            }
-            Spacer(Modifier.height(12.dp))
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GlassButton("‹", modifier = Modifier.width(56.dp)) { anchor = shiftRange(range, anchor, -1) }
-                Text(b.label, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                GlassButton("›", modifier = Modifier.width(56.dp)) { anchor = shiftRange(range, anchor, 1) }
+                GlassButton("‹", modifier = Modifier.width(56.dp)) { ym = shiftYm(ym, -1) }
+                Text(ymLabel(ym), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                GlassButton("›", modifier = Modifier.width(56.dp)) { ym = shiftYm(ym, 1) }
             }
         }
 
-        // 加班 & 请假录入
+        // 全员总工资（先出总额）
         GlassCard(Modifier.fillMaxWidth()) {
-            Text(context.getString(R.string.ot_leave_title), fontSize = 13.sp, color = c.textSecondary)
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(value = otW(), onValueChange = { saveOt(it, otWe(), otH()) }, label = context.getString(R.string.ot_weekday_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-                TextField(value = otWe(), onValueChange = { saveOt(otW(), it, otH()) }, label = context.getString(R.string.ot_weekend_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-                TextField(value = otH(), onValueChange = { saveOt(otW(), otWe(), it) }, label = context.getString(R.string.ot_holiday_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(value = lSick(), onValueChange = { saveLeave(it, lPers(), lAnn()) }, label = context.getString(R.string.leave_sick_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-                TextField(value = lPers(), onValueChange = { saveLeave(lSick(), it, lAnn()) }, label = context.getString(R.string.leave_personal_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-                TextField(value = lAnn(), onValueChange = { saveLeave(lSick(), lPers(), it) }, label = context.getString(R.string.leave_annual_hint), useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-            }
-        }
-
-        // 工资明细
-        GlassCard(Modifier.fillMaxWidth()) {
-            Text(context.getString(R.string.net_pay_label), fontSize = 13.sp, color = c.textSecondary)
-            Text("${pay.netPay.toLong()} LAK", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = accent)
+            Text("本月全员实发合计", fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f))
+            Text("${totalNet.toLong()} LAK", fontSize = 34.sp, fontWeight = FontWeight.Bold, color = accent)
             Spacer(Modifier.height(10.dp))
-            PayRow(context.getString(R.string.pay_attend_days), "${fmtNum(pay.attendDays)} 天", c)
-            PayRow(context.getString(R.string.pay_base), "${pay.basePay.toLong()} LAK", c)
-            PayRow(context.getString(R.string.pay_overtime), "${pay.overtimePay.toLong()} LAK", c)
-            PayRow(context.getString(R.string.pay_allowance), "${pay.allowance.toLong()} LAK", c)
-            PayRow(context.getString(R.string.pay_bonus), "${pay.bonus.toLong()} LAK", c)
-            PayRow(context.getString(R.string.pay_advance), "-${pay.advance.toLong()} LAK", c, negative = true)
-            PayRow(context.getString(R.string.pay_deduction), "-${pay.deduction.toLong()} LAK", c, negative = true)
+            SumRow("应发合计", "${totalGross.toLong()} LAK")
+            SumRow("预支合计", "-${totalAdv.toLong()} LAK", neg = true)
+            SumRow("人数", "${pays.size} 人")
         }
 
-        // 图表
-        GlassCard(Modifier.fillMaxWidth()) {
-            Text(chartTitle(range, context), fontSize = 13.sp, color = c.textSecondary)
-            Spacer(Modifier.height(10.dp))
-            BarChart(buildChart(range, anchor, empRecords, emp, rule))
+        if (employees.isEmpty()) {
+            GlassCard(Modifier.fillMaxWidth()) {
+                Text("暂无员工，请到 设置 › 工资 › 员工薪资 添加。", fontSize = 13.sp, color = c.textSecondary)
+            }
         }
 
-        // 明细记录
-        GlassCard(Modifier.fillMaxWidth()) {
-            Text(context.getString(R.string.detail_records), fontSize = 13.sp, color = c.textSecondary)
-            Spacer(Modifier.height(6.dp))
-            if (inRange.isEmpty()) {
-                Text(context.getString(R.string.no_records_in_range), fontSize = 13.sp, color = c.textSecondary)
-            } else {
-                inRange.sortedByDescending { it.date }.forEach { r ->
-                    Row(
-                        Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(r.date, fontSize = 13.sp, color = c.textPrimary)
-                        Text(statusLabel(r.status, context), fontSize = 12.sp, color = c.textSecondary)
-                        val d = daysOf(r.status)
+        // 每个员工
+        pays.forEach { p ->
+            GlassCard(Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(p.nameZh.ifBlank { p.nameLo }, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         Text(
-                            "${fmtNum(d)}天 · ${(d * (emp?.dailyWage ?: 0.0)).toLong()} LAK",
-                            fontSize = 13.sp, fontWeight = FontWeight.Medium, color = accent
+                            "出勤 ${fmtNum(p.attend)} / 应出勤 ${p.expectedDays} 天（${p.fullDays}全 ${p.halfDays}半 ${p.absentDays}缺）",
+                            fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f)
                         )
                     }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("${p.net.toLong()}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = accent)
+                        Text("实发 LAK", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                    }
                 }
+                Spacer(Modifier.height(8.dp))
+                SumRow("月薪", "${p.monthly.toLong()} LAK")
+                if (p.penaltyDays > 0) SumRow("扣减（${p.penaltyDays} 天）", "-${p.penalty.toLong()} LAK", neg = true)
+                SumRow("应发", "${p.gross.toLong()} LAK")
+                Spacer(Modifier.height(8.dp))
+                TextField(
+                    value = advMap[p.employeeId] ?: (if (p.advance > 0) p.advance.toInt().toString() else ""),
+                    onValueChange = {
+                        advMap[p.employeeId] = it
+                        Config.setAdvance(context, p.employeeId, ym, it.toDoubleOrNull() ?: 0.0)
+                    },
+                    label = "预支 (LAK)",
+                    useLabelAsPlaceholder = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(6.dp))
+                TextField(
+                    value = rmMap[p.employeeId] ?: p.remark,
+                    onValueChange = {
+                        rmMap[p.employeeId] = it
+                        Config.setRemark(context, p.employeeId, ym, it)
+                    },
+                    label = "备注",
+                    useLabelAsPlaceholder = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
 
-        GlassButton(context.getString(R.string.export_range_csv), modifier = Modifier.fillMaxWidth()) {
-            exportRange(context, emp, inRange, pay)
+        GlassButton("导出本月工资 CSV", modifier = Modifier.fillMaxWidth()) {
+            exportMonth(context, ym, pays)
         }
+
+        Text(
+            "规则：应出勤=当月天数−${SalaryEngine.FREE_DAYS}；出勤折算=全天×1+半天×0.5；一天工资=月薪÷应出勤；出勤<应出勤扣1天、<应出勤÷2扣2天；实发=月薪−扣减−预支。",
+            fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f)
+        )
     }
 }
 
 @Composable
-private fun PayRow(label: String, value: String, c: AppColors, negative: Boolean = false) {
+private fun SumRow(label: String, value: String, neg: Boolean = false) {
+    val c = LocalAppColors.current
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        Modifier.fillMaxWidth().padding(vertical = 3.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(label, fontSize = 13.sp, color = c.textSecondary)
-        Text(value, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = if (negative) Color(0xFFFF7A7A) else c.textPrimary)
+        Text(value, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = if (neg) Color(0xFFFF7A7A) else c.textPrimary)
     }
-}
-
-private fun daysOf(s: Status): Double = when (s) {
-    Status.FULL -> 1.0
-    Status.HALF -> 0.5
-    Status.ABSENT -> 0.0
 }
 
 private fun fmtNum(d: Double): String =
     if (d == d.toLong().toDouble()) d.toLong().toString() else d.toString()
 
-private fun payRangeLabel(r: PayRange, ctx: Context): String = when (r) {
-    PayRange.DAY -> ctx.getString(R.string.range_day)
-    PayRange.MONTH -> ctx.getString(R.string.range_month)
-    PayRange.YEAR -> ctx.getString(R.string.range_year)
+private fun ymLabel(ym: String): String {
+    val p = ym.split("-")
+    return if (p.size == 2) "${p[0]}年${p[1]}月" else ym
 }
 
-private fun statusLabel(s: Status, ctx: Context): String = when (s) {
-    Status.FULL -> ctx.getString(R.string.status_full)
-    Status.HALF -> ctx.getString(R.string.status_half)
-    Status.ABSENT -> ctx.getString(R.string.status_absent)
+private fun shiftYm(ym: String, dir: Int): String {
+    val p = ym.split("-")
+    var y = p.getOrNull(0)?.toIntOrNull() ?: return ym
+    var m = p.getOrNull(1)?.toIntOrNull() ?: return ym
+    m += dir
+    if (m < 1) { m = 12; y -= 1 }
+    if (m > 12) { m = 1; y += 1 }
+    return String.format(Locale.US, "%04d-%02d", y, m)
 }
 
-private fun chartTitle(r: PayRange, ctx: Context): String = when (r) {
-    PayRange.DAY -> ctx.getString(R.string.chart_day)
-    PayRange.MONTH -> ctx.getString(R.string.chart_month)
-    PayRange.YEAR -> ctx.getString(R.string.chart_year)
-}
-
-private fun ymd(c: Calendar): String = String.format(
-    Locale.US, "%04d-%02d-%02d", c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH)
-)
-
-private fun rangeBounds(range: PayRange, anchor: Long): RB {
-    val c = Calendar.getInstance(); c.timeInMillis = anchor
-    val y = c.get(Calendar.YEAR); val m = c.get(Calendar.MONTH) + 1
-    return when (range) {
-        PayRange.DAY -> { val d = ymd(c); RB(d, d + "~", d) }
-        PayRange.MONTH -> {
-            val start = String.format(Locale.US, "%04d-%02d-01", y, m)
-            val end = if (m == 12) String.format(Locale.US, "%04d-01-01", y + 1)
-            else String.format(Locale.US, "%04d-%02d-01", y, m + 1)
-            RB(start, end, String.format(Locale.US, "%04d年%02d月", y, m))
-        }
-        PayRange.YEAR -> RB(
-            String.format(Locale.US, "%04d-01-01", y),
-            String.format(Locale.US, "%04d-01-01", y + 1),
-            "${y}年"
-        )
+private fun exportMonth(context: Context, ym: String, pays: List<MonthPay>) {
+    val sb = StringBuilder("姓名,全天,半天,缺勤,出勤折算,应出勤,月薪,扣减天,扣减,应发,预支,实发,备注\n")
+    pays.forEach { p ->
+        sb.append(csvEsc(p.nameZh)).append(',')
+            .append(p.fullDays).append(',').append(p.halfDays).append(',').append(p.absentDays).append(',')
+            .append(fmtNum(p.attend)).append(',').append(p.expectedDays).append(',')
+            .append(p.monthly.toLong()).append(',').append(p.penaltyDays).append(',').append(p.penalty.toLong()).append(',')
+            .append(p.gross.toLong()).append(',').append(p.advance.toLong()).append(',').append(p.net.toLong()).append(',')
+            .append(csvEsc(p.remark)).append('\n')
     }
-}
-
-private fun shiftRange(range: PayRange, anchor: Long, dir: Int): Long {
-    val c = Calendar.getInstance(); c.timeInMillis = anchor
-    when (range) {
-        PayRange.DAY -> c.add(Calendar.DAY_OF_MONTH, dir)
-        PayRange.MONTH -> c.add(Calendar.MONTH, dir)
-        PayRange.YEAR -> c.add(Calendar.YEAR, dir)
-    }
-    return c.timeInMillis
-}
-
-private fun buildChart(
-    range: PayRange,
-    anchor: Long,
-    recs: List<AttendanceRecord>,
-    emp: Employee?,
-    rule: PayRule,
-): List<BarEntry> {
-    if (emp == null) return emptyList()
-    val c = Calendar.getInstance(); c.timeInMillis = anchor
-    val y = c.get(Calendar.YEAR); val m = c.get(Calendar.MONTH) + 1; val d = c.get(Calendar.DAY_OF_MONTH)
-    fun net(pred: (AttendanceRecord) -> Boolean): Double =
-        SalaryEngine.compute(
-            SalaryEngine.aggregate(recs.filter(pred), emp.dailyWage, emp.monthlyBase, emp.bonus, emp.advance), rule
-        ).netPay
-    return when (range) {
-        PayRange.DAY -> {
-            c.set(Calendar.DAY_OF_MONTH, 1)
-            val dim = c.getActualMaximum(Calendar.DAY_OF_MONTH)
-            (1..dim).map { day ->
-                val ds = String.format(Locale.US, "%04d-%02d-%02d", y, m, day)
-                BarEntry(if (day % 5 == 0 || day == dim) day.toString() else "", net { it.date == ds }, day == d)
-            }
-        }
-        PayRange.MONTH -> (1..12).map { mo ->
-            val prefix = String.format(Locale.US, "%04d-%02d", y, mo)
-            BarEntry("$mo", net { it.date.startsWith(prefix) }, mo == m)
-        }
-        PayRange.YEAR -> ((y - 4)..y).map { yy ->
-            BarEntry(yy.toString(), net { it.date.startsWith(yy.toString()) }, yy == y)
-        }
-    }
-}
-
-private fun exportRange(context: Context, emp: Employee?, recs: List<AttendanceRecord>, pay: PayBreakdown) {
-    val sb = StringBuilder("date,status,days\n")
-    recs.sortedBy { it.date }.forEach { r ->
-        sb.append(r.date).append(',').append(r.status.name).append(',').append(daysOf(r.status)).append('\n')
-    }
-    sb.append("\n出勤天数,${pay.attendDays}\n基本工资,${pay.basePay.toLong()}\n加班费,${pay.overtimePay.toLong()}\n")
-    sb.append("补贴,${pay.allowance.toLong()}\n奖金,${pay.bonus.toLong()}\n预支,${pay.advance.toLong()}\n扣款,${pay.deduction.toLong()}\n实发,${pay.netPay.toLong()}\n")
-    val name = "salary_${emp?.nameZh ?: "x"}_${SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(Date())}.csv"
     val dir = java.io.File(context.getExternalFilesDir(null), "exports")
     dir.mkdirs()
-    val f = java.io.File(dir, name)
+    val f = java.io.File(dir, "工资_$ym.csv")
     f.writeText(sb.toString())
     Toast.makeText(context, "已导出 ${f.absolutePath}", Toast.LENGTH_LONG).show()
 }
+
+private fun csvEsc(v: String): String =
+    if (v.any { it == ',' || it == '"' || it == '\n' }) "\"${v.replace("\"", "\"\"")}\"" else v
