@@ -381,15 +381,26 @@ private fun shiftDate(date: String, delta: Int): String {
 
 // ===================== 统计页 =====================
 
+private fun currentYm(): String {
+    val cal = Calendar.getInstance()
+    return String.format(Locale.US, "%04d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1)
+}
+
+private fun shiftYm(ym: String, delta: Int): String {
+    val parts = ym.split("-")
+    val cal = Calendar.getInstance()
+    cal.set(parts[0].toInt(), parts[1].toInt() - 1, 1)
+    cal.add(Calendar.MONTH, delta)
+    return String.format(Locale.US, "%04d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1)
+}
+
 @Composable
 private fun StatsPanel() {
     val context = LocalContext.current
     val c = LocalAppColors.current
     val employees = remember { Config.employees(context) }
     // 月份导航
-    var anchorMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    val cal = remember(anchorMs) { Calendar.getInstance().apply { timeInMillis = anchorMs } }
-    val ym = remember(cal) { String.format(Locale.US, "%04d-%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1) }
+    var ym by remember { mutableStateOf(currentYm()) }
     val summary = remember(ym) { AttendanceStore.monthSummary(context, ym) }
     val allRecords = remember(ym) { AttendanceStore.all(context) }
 
@@ -407,16 +418,11 @@ private fun StatsPanel() {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 GlassButton("‹", modifier = Modifier.width(56.dp)) {
-                    cal.add(Calendar.MONTH, -1); anchorMs = cal.timeInMillis
+                    ym = shiftYm(ym, -1)
                 }
                 Text(ym, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
                 GlassButton("›", modifier = Modifier.width(56.dp)) {
-                    val now = Calendar.getInstance()
-                    if (cal.get(Calendar.YEAR) < now.get(Calendar.YEAR) ||
-                        cal.get(Calendar.MONTH) < now.get(Calendar.MONTH)
-                    ) {
-                        cal.add(Calendar.MONTH, 1); anchorMs = cal.timeInMillis
-                    }
+                    if (ym < currentYm()) ym = shiftYm(ym, 1)
                 }
             }
         }
