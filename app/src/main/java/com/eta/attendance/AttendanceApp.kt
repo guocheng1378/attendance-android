@@ -399,6 +399,23 @@ private fun SettingsPanel() {
         }
         Spacer(Modifier.height(12.dp))
 
+        // 从 GitHub 导入
+        GlassCard(Modifier.fillMaxWidth()) {
+            Text("从 GitHub 导入考勤", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+            Text("粘贴 attendance-tracker 备份 JSON 的 raw 链接，按姓名匹配员工并覆盖当月记录", fontSize = 11.sp, color = c.textSecondary)
+            Spacer(Modifier.height(8.dp))
+            var gUrl by remember { mutableStateOf("https://raw.githubusercontent.com/guocheng1378/attendance-tracker/main/backup/attendance-2026-08-31_070529.json") }
+            TextField(value = gUrl, onValueChange = { gUrl = it }, label = "数据 URL", useLabelAsPlaceholder = true, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(8.dp))
+            GlassButton("导入", primary = true, modifier = Modifier.fillMaxWidth()) {
+                scope.launch {
+                    val n = AttendanceStore.importFromTracker(context, gUrl)
+                    Toast.makeText(context, if (n >= 0) "已导入 $n 条" else "导入失败", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+
         // Supabase
         GlassCard(Modifier.fillMaxWidth()) {
             Text(context.getString(R.string.cloud), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
