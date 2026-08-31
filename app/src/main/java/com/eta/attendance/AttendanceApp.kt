@@ -70,20 +70,24 @@ private fun AttendanceScreen() {
         Box(Modifier.fillMaxSize().layerBackdrop(backdropBg)) {
             GlassBackground()
         }
-        Column(Modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxWidth().weight(1f)) {
-                CompositionLocalProvider(LocalBackdrop provides backdropBg) {
-                    NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
-                        entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
-                        entry<Route.Stats> { StatsPanel() }
-                        entry<Route.Salary> { SalaryPanel2() }
-                        entry<Route.Settings> { SettingsPanel() }
-                    }
+        Box(Modifier.fillMaxSize().padding(bottom = 104.dp)) {
+            CompositionLocalProvider(LocalBackdrop provides backdropBg) {
+                NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
+                    entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
+                    entry<Route.Stats> { StatsPanel() }
+                    entry<Route.Salary> { SalaryPanel2() }
+                    entry<Route.Settings> { SettingsPanel() }
                 }
             }
-            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
-                BottomNavBar(navController, backdropBg)
-            }
+        }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .safeDrawingPadding()
+        ) {
+            BottomNavBar(navController, backdropBg)
         }
     }
 }
