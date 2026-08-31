@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -206,31 +207,30 @@ private fun SavingButton(
     var saving by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    GlassButton(
-        text = if (saving) "" else text,
-        primary = true,
-        modifier = modifier,
-        onClick = {
-            if (!saving) {
-                saving = true
-                scope.launch {
-                    try {
-                        onClick()
-                        // 震动反馈
-                        val vib = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-                        vib?.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE))
-                    } finally {
-                        saving = false
+    Box(modifier = modifier) {
+        GlassButton(
+            text = if (saving) "  " else text,
+            primary = true,
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                if (!saving) {
+                    saving = true
+                    scope.launch {
+                        try {
+                            onClick()
+                            val vib = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+                            vib?.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE))
+                        } finally {
+                            saving = false
+                        }
                     }
                 }
             }
-        }
-    ) {
+        )
         if (saving) {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
-                    color = Color.White,
                     strokeWidth = 2.dp,
                 )
             }
@@ -707,7 +707,7 @@ private fun SettingsPanel() {
                     }
                     if (davUploadLoading) {
                         Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(Modifier.size(20.dp), color = c.textPrimary, strokeWidth = 2.dp)
+                            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                         }
                     }
                 }
@@ -729,7 +729,7 @@ private fun SettingsPanel() {
                     }
                     if (davRestoreLoading) {
                         Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                         }
                     }
                 }
@@ -771,7 +771,7 @@ private fun SettingsPanel() {
                 }
                 if (ghImportLoading) {
                     Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                     }
                 }
             }
@@ -809,7 +809,7 @@ private fun SettingsPanel() {
                     }
                     if (syncLoading) {
                         Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                         }
                     }
                 }
