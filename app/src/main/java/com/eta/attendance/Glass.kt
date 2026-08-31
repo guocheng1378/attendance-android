@@ -49,7 +49,26 @@ import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.blur.BlurDefaults
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
 import top.yukonga.miuix.kmp.blur.highlight.Highlight
+import top.yukonga.miuix.kmp.blur.BlurBlendMode
+import top.yukonga.miuix.kmp.blur.highlight.BloomStroke
+import top.yukonga.miuix.kmp.blur.highlight.LightPosition
+import top.yukonga.miuix.kmp.blur.highlight.LightSource
+import top.yukonga.miuix.kmp.blur.highlight.rememberTiltLight
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.animation.core.spring
 import top.yukonga.miuix.kmp.nav.core.NavController
+
+val LocalBackdrop = compositionLocalOf<LayerBackdrop?> { null }
+
+@Composable
+internal fun rememberGlassColors() = BlurDefaults.blurColors(blendColors = listOf(BlendColorEntry(color = Color.White.copy(alpha = 0.12f), mode = BlurBlendMode.Screen)), brightness = 0.03f, contrast = 1.07f, saturation = 1.1f)
+
+@Composable
+internal fun rememberGlassHighlight(): Highlight {
+    val tilt = rememberTiltLight(basePosition = LightPosition(0.5f, 0.7f, -0.5f), color = Color.White.copy(alpha = 0.9f), intensity = 0.85f, sensitivity = 0.14f)
+    return remember(tilt) { Highlight(width = 1.1.dp, alpha = 0.9f, style = BloomStroke(color = Color.White.copy(alpha = 0.07f), innerBlurRadius = 4.dp, primaryLight = tilt, secondaryLight = LightSource(position = LightPosition(0.5f, 0.3f, -0.5f), color = Color.White.copy(alpha = 0.5f), intensity = 0.45f), dualPeak = true)) }
+}
 
 /** 动态渐变背景：随配色变化，深色下整体压暗 */
 @Composable
@@ -95,11 +114,19 @@ internal fun GlassCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = LocalAppColors.current
+    val backdrop = LocalBackdrop.current
+    val glassColors = rememberGlassColors()
+    val glassHighlight = rememberGlassHighlight()
+    val base = if (backdrop != null) {
+        Modifier.textureBlur(backdrop = backdrop, shape = shape, blurRadius = 16f, noiseCoefficient = 0.003f, colors = glassColors, highlight = glassHighlight)
+    } else {
+        Modifier.background(c.glassFill)
+    }
     Column(
         modifier = modifier
             .shadow(14.dp, shape, ambientColor = Color.Black.copy(alpha = 0.10f), spotColor = Color.Black.copy(alpha = 0.22f))
             .clip(shape)
-            .background(c.glassFill)
+            .then(base)
             .background(
                 Brush.verticalGradient(
                     0f to c.glassHighlight.copy(alpha = if (c.isDark) 0.16f else 0.5f),
@@ -207,11 +234,11 @@ internal fun BottomNavBar(navController: NavController, backdrop: LayerBackdrop)
     val routes = listOf(Route.CheckIn, Route.Stats, Route.Salary, Route.Settings)
     val current = navController.backStack.lastOrNull()
     val selectedTab = routes.indexOfFirst { it == current }.coerceAtLeast(0)
-    val colorScheme = MiuixTheme.colorScheme
-    val highlight = if (c.isDark) Highlight.GlassStrokeMiddleDark else Highlight.GlassStrokeMiddleLight
     val pill = RoundedCornerShape(26.dp)
     val selPill = RoundedCornerShape(20.dp)
-    val indicator by animateFloatAsState(selectedTab.toFloat(), animationSpec = tween(260), label = "navInd")
+    val glassColors = rememberGlassColors()
+    val highlight = rememberGlassHighlight()
+    val indicator by animateFloatAsState(selectedTab.toFloat(), animationSpec = spring(stiffness = 380f, dampingRatio = 0.85f), label = "navInd")
     Box(Modifier.fillMaxWidth().shadow(18.dp, pill, ambientColor = Color.Black.copy(alpha = 0.12f), spotColor = Color.Black.copy(alpha = 0.28f))) {
         BoxWithConstraints(
             Modifier
@@ -219,8 +246,9 @@ internal fun BottomNavBar(navController: NavController, backdrop: LayerBackdrop)
                 .textureBlur(
                     backdrop = backdrop,
                     shape = pill,
-                    blurRadius = 25f,
-                    colors = BlurDefaults.blurColors(blendColors = listOf(BlendColorEntry(color = colorScheme.surface.copy(0.8f)))),
+                    blurRadius = 22f,
+                    noiseCoefficient = 0.003f,
+                    colors = glassColors,
                     highlight = highlight,
                 )
                 .padding(6.dp),

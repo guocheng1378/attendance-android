@@ -67,13 +67,15 @@ private fun AttendanceScreen() {
     val c = LocalAppColors.current
     val backdrop = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
     Box(Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
-            GlassBackground()
-            NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
-                entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
-                entry<Route.Stats> { StatsPanel() }
-                entry<Route.Salary> { SalaryPanel2() }
-                entry<Route.Settings> { SettingsPanel() }
+        CompositionLocalProvider(LocalBackdrop provides backdrop) {
+            Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
+                GlassBackground()
+                NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
+                    entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
+                    entry<Route.Stats> { StatsPanel() }
+                    entry<Route.Salary> { SalaryPanel2() }
+                    entry<Route.Settings> { SettingsPanel() }
+                }
             }
         }
         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
