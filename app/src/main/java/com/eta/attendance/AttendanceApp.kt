@@ -65,30 +65,29 @@ private fun AttendanceScreen() {
     val backStack = rememberNavBackStack<Route>(Route.CheckIn)
     val navController = remember { NavController(backStack) }
     val c = LocalAppColors.current
-    // 背景专用 backdrop：只录制 GlassBackground，供卡片/底栏采样，避免自引用递归闪退
+    // 背景专用 backdrop：只录制 GlassBackground（不含面板），供卡片/底栏采样 → 打破自引用递归
     val backdropBg = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
-    // 内容盒自身的 backdrop（仅用于本层绘制，不被卡片采样）
-    val backdropContent = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
+    // 主层 backdrop：录制 背景+内容，仅用于本层绘制，不被任何卡片采样
+    val backdropMain = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
     Box(Modifier.fillMaxSize()) {
-        // 背景层：录制背景并在屏上画出渐变
-        Box(Modifier.fillMaxSize().layerBackdrop(backdropBg)) {
-            GlassBackground()
-        }
-        // 内容 + 底栏：用 Column 让底栏稳居底部（不依赖 BoxScope.align，避免被内容盒顶到顶部）
-        Column(Modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxWidth().weight(1f).layerBackdrop(backdropContent)) {
-                CompositionLocalProvider(LocalBackdrop provides backdropBg) {
-                    NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
-                        entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
-                        entry<Route.Stats> { StatsPanel() }
-                        entry<Route.Salary> { SalaryPanel2() }
-                        entry<Route.Settings> { SettingsPanel() }
-                    }
+        // 主层：内容与背景同处一个 layerBackdrop 盒内就地绘制（还原可工作结构）
+        Box(Modifier.fillMaxSize().layerBackdrop(backdropMain)) {
+            // 仅把背景录进 backdropBg：卡片采样它、而它不含面板本身 → 不递归
+            Box(Modifier.fillMaxSize().layerBackdrop(backdropBg)) {
+                GlassBackground()
+            }
+            CompositionLocalProvider(LocalBackdrop provides backdropBg) {
+                NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
+                    entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
+                    entry<Route.Stats> { StatsPanel() }
+                    entry<Route.Salary> { SalaryPanel2() }
+                    entry<Route.Settings> { SettingsPanel() }
                 }
             }
-            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
-                BottomNavBar(navController, backdropBg)
-            }
+        }
+        // 底栏：与内容盒并列的第二个子节点，align(BottomCenter) 生效（同可工作结构）
+        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
+            BottomNavBar(navController, backdropBg)
         }
     }
 }
