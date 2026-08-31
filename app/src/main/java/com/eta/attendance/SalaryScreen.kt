@@ -148,7 +148,7 @@ internal fun SalaryPanel2() {
         }
 
         Text(
-            "规则：一天工资=(月薪+奖金)÷当月天数；应出勤=当月天数−${SalaryEngine.FREE_DAYS}；出勤折算=全天×1+半天×0.5；出勤<应出勤扣1天、<应出勤÷2扣2天；实发=(月薪+奖金)−扣减−预支。",
+            "规则：一天工资=(月薪+奖金)÷当月天数；应出勤=当月天数−${SalaryEngine.FREE_DAYS}；出勤折算=全天×1+半天×0.5；出勤<应出勤扣1天、<应出勤÷2扣2天；应发=出勤×日薪；实发=应发−扣减−预支。",
             fontSize = 11.sp, color = c.textPrimary.copy(alpha = 0.7f)
         )
     }

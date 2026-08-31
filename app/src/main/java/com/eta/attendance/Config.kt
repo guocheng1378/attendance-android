@@ -45,21 +45,21 @@ object Config {
     private const val KEY_SB_KEY = "supabase_key"
     private const val KEY_AUTO_BACKUP = "auto_backup"
     private const val KEY_EMP_SEED = "emp_seed"
-    private const val EMP_SEED_VERSION = 2
+    private const val EMP_SEED_VERSION = 3
 
     private val DEFAULT_EMPLOYEES = listOf(
-        Employee(1, "โชน", "盘", monthlyBase = 4500000.0, bonus = 0.0),
-        Employee(2, "มู", "姆", monthlyBase = 4000000.0, bonus = 500000.0),
-        Employee(3, "รິม", "松", monthlyBase = 4000000.0, bonus = 0.0),
-        Employee(4, "บາว", "巴", monthlyBase = 4000000.0, bonus = 0.0),
-        Employee(5, "ຊຽง", "恩", monthlyBase = 4000000.0, bonus = 0.0),
-        Employee(6, "ຈຽง", "乐昂", monthlyBase = 4000000.0, bonus = 0.0),
-        Employee(7, "เบ້ณ", "文", monthlyBase = 4000000.0, bonus = 0.0),
-        Employee(8, "ตົง", "米", monthlyBase = 4000000.0, bonus = 0.0),
-        Employee(9, "ຈຽง", "抏", monthlyBase = 4500000.0, bonus = 500000.0),
-        Employee(10, "กິນ", "春", monthlyBase = 4500000.0, bonus = 500000.0),
-        Employee(11, "คຽง", "研", monthlyBase = 4000000.0, bonus = 300000.0),
-        Employee(12, "มົว", "罗", monthlyBase = 4000000.0, bonus = 0.0),
+        Employee(1, "ໂອນ", "盘", monthlyBase = 4500000.0, bonus = 0.0),
+        Employee(2, "ມູ", "姆", monthlyBase = 4000000.0, bonus = 500000.0),
+        Employee(3, "ຣິມ", "松", monthlyBase = 4000000.0, bonus = 0.0),
+        Employee(4, "ບາວ", "巴", monthlyBase = 4000000.0, bonus = 0.0),
+        Employee(5, "ຊົງ", "恩", monthlyBase = 4000000.0, bonus = 0.0),
+        Employee(6, "ຈົງ", "乐昂", monthlyBase = 4000000.0, bonus = 0.0),
+        Employee(7, "ເບີນ", "文", monthlyBase = 4000000.0, bonus = 0.0),
+        Employee(8, "ຕົງ", "米", monthlyBase = 4000000.0, bonus = 0.0),
+        Employee(9, "ຈົງ", "拽", monthlyBase = 4500000.0, bonus = 500000.0),
+        Employee(10, "ກິນ", "春", monthlyBase = 4500000.0, bonus = 500000.0),
+        Employee(11, "ຄົງ", "研", monthlyBase = 4000000.0, bonus = 300000.0),
+        Employee(12, "ມົວ", "罗", monthlyBase = 4000000.0, bonus = 0.0),
     )
 
     /** 兼容旧代码的默认名单 */

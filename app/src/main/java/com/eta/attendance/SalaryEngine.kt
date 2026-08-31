@@ -88,8 +88,8 @@ object SalaryEngine {
             else -> 0
         }
         val penalty = dailyRate * penaltyDays
-        val gross = (base - penalty).coerceAtLeast(0.0)
-        val net = gross - advance
+        val gross = attend * dailyRate
+        val net = (gross - penalty).coerceAtLeast(0.0) - advance
         return MonthPay(
             emp.id, emp.nameZh, emp.nameLo, monthly, bonus, dim, expected,
             full, half, absent, attend, dailyRate, penaltyDays, penalty,
