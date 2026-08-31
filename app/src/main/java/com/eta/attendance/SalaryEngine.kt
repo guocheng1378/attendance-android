@@ -44,19 +44,20 @@ data class MonthPay(
     val advance: Double,
     val remark: String,
     val net: Double,
+    val payable: Double,
 )
 
 /**
  * 工资计算引擎（参考 attendance-tracker 并按需求调整）：
  *  - 计薪基数 = 月薪 + 奖金；无日薪/加班/补贴/扣款字段。
  *  - 一天工资 = (月薪 + 奖金) ÷ 当月天数。
- *  - 应出勤天数 = 当月总天数 - FREE_DAYS(2)。
+ *  - 应出勤天数 = 当月总天数 - FREE_DAYS(5)。
  *  - 出勤折算 = 全天×1 + 半天×0.5。
  *  - 出勤 < 应出勤÷2 → 扣 2 天工资；出勤 < 应出勤 → 扣 1 天工资；否则不扣。
- *  - 应发 = (月薪 + 奖金) - 扣减；实发 = 应发 - 当月预支。
+ *  - 应发 = (月薪 + 奖金) - 扣减 - 当月预支；实发 = 应发 + 当月预支（= 当月总收款）。
  */
 object SalaryEngine {
-    const val FREE_DAYS = 2
+    const val FREE_DAYS = 5
 
     /** 金额按千位四舍五入 */
     private fun roundKip(v: Double): Double = (v / 1000.0).roundToLong() * 1000.0
@@ -94,11 +95,12 @@ object SalaryEngine {
         val gross = roundKip(attend * dailyRate)
         val penalty = roundKip(dailyRate * penaltyDays)
         val advanceR = roundKip(advance)
-        val net = roundKip((gross - penalty).coerceAtLeast(0.0) - advanceR)
+        val payable = roundKip((gross - penalty).coerceAtLeast(0.0) - advanceR)
+        val net = roundKip((gross - penalty).coerceAtLeast(0.0))
         return MonthPay(
             emp.id, emp.nameZh, emp.nameLo, monthly, bonus, dim, expected,
             full, half, absent, attend, dailyRate, penaltyDays, penalty,
-            gross, advanceR, remark, net,
+            gross, advanceR, remark, net, payable,
         )
     }
 }

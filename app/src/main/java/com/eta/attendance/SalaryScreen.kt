@@ -52,9 +52,9 @@ internal fun SalaryPanel2() {
             remark = rmMap[e.id] ?: Config.getRemark(context, e.id, ym),
         )
     }
-    val totalGross = pays.sumOf { it.gross }
     val totalAdv = pays.sumOf { it.advance }
     val totalNet = pays.sumOf { it.net }
+    val totalPayable = pays.sumOf { it.payable }
     val accent = if (c.palette.id == "mono") c.textPrimary else c.palette.accent
 
     Column(
@@ -82,7 +82,7 @@ internal fun SalaryPanel2() {
             Text("本月全员实发合计", fontSize = 13.sp, color = c.textPrimary.copy(alpha = 0.85f))
             Text("${k(totalNet)} LAK", fontSize = 34.sp, fontWeight = FontWeight.Bold, color = accent)
             Spacer(Modifier.height(10.dp))
-            SumRow("应发合计", "${k(totalGross)} LAK")
+            SumRow("应发合计", "${k(totalPayable)} LAK")
             SumRow("预支合计", "-${totalAdv.toLong()} LAK", neg = true)
             SumRow("人数", "${pays.size} 人")
         }
@@ -118,7 +118,7 @@ internal fun SalaryPanel2() {
                 SumRow("月薪", "${k(p.monthly)} LAK")
                 SumRow("奖金", "${k(p.bonus)} LAK")
                 if (p.penaltyDays > 0) SumRow("扣减（${p.penaltyDays} 天）", "-${k(p.penalty)} LAK", neg = true)
-                SumRow("应发", "${k(p.gross)} LAK")
+                SumRow("应发", "${k(p.payable)} LAK")
                 Spacer(Modifier.height(8.dp))
                 TextField(
                     value = advMap[p.employeeId] ?: (if (p.advance > 0) p.advance.toInt().toString() else ""),
@@ -149,7 +149,7 @@ internal fun SalaryPanel2() {
         }
 
         Text(
-            "规则：一天工资=(月薪+奖金)÷当月天数；应出勤=当月天数−${SalaryEngine.FREE_DAYS}；出勤折算=全天×1+半天×0.5；出勤<应出勤扣1天、<应出勤÷2扣2天；应发=出勤×日薪；实发=应发−扣减−预支。",
+            "规则：一天工资=(月薪+奖金)÷当月天数；应出勤=当月天数−${SalaryEngine.FREE_DAYS}；出勤折算=全天×1+半天×0.5；出勤<应出勤扣1天、<应出勤÷2扣2天；应发=出勤×日薪−扣减−预支；实发=应发+预支（当月总收款）。",
             fontSize = 11.sp, color = c.textPrimary.copy(alpha = 0.7f)
         )
     }
@@ -194,7 +194,7 @@ private fun exportMonth(context: Context, ym: String, pays: List<MonthPay>) {
             .append(p.fullDays).append(',').append(p.halfDays).append(',').append(p.absentDays).append(',')
             .append(fmtNum(p.attend)).append(',').append(p.expectedDays).append(',')
             .append(p.monthly.toLong()).append(',').append(p.bonus.toLong()).append(',').append(p.penaltyDays).append(',').append(k(p.penalty)).append(',')
-            .append(k(p.gross)).append(',').append(p.advance.toLong()).append(',').append(k(p.net)).append(',')
+            .append(k(p.payable)).append(',').append(p.advance.toLong()).append(',').append(k(p.net)).append(',')
             .append(csvEsc(p.remark)).append('\n')
     }
     val dir = java.io.File(context.getExternalFilesDir(null), "exports")
