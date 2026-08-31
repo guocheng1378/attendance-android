@@ -143,6 +143,18 @@ object Config {
         sp(c).edit().putString(KEY_EMPLOYEES, arr.toString()).apply()
     }
 
+    fun addEmployee(c: Context, nameLo: String, nameZh: String, dailyWage: Double): Int {
+        val list = employees(c).toMutableList()
+        val id = (list.maxOfOrNull { it.id } ?: 0) + 1
+        list.add(Employee(id, nameLo.trim(), nameZh.trim(), "", dailyWage, 0.0, 0.0))
+        saveEmployees(c, list)
+        return id
+    }
+
+    fun removeEmployee(c: Context, id: Int) {
+        saveEmployees(c, employees(c).filter { it.id != id })
+    }
+
     // Supabase
     fun supabaseUrl(c: Context): String =
         sp(c).getString(KEY_SB_URL, BuildConfig.SUPABASE_URL) ?: BuildConfig.SUPABASE_URL

@@ -427,9 +427,15 @@ private fun NumField(label: String, value: String, onChange: (String) -> Unit) {
 @Composable
 private fun EmployeeEditor(context: Context) {
     val c = LocalAppColors.current
-    val base = remember { Config.employees(context) }
-    val dwMap = remember { mutableStateMapOf<Int, String>().apply { base.forEach { put(it.id, it.dailyWage.toInt().toString()) } } }
-    val mbMap = remember { mutableStateMapOf<Int, String>().apply { base.forEach { put(it.id, if (it.monthlyBase > 0) it.monthlyBase.toInt().toString() else "") } } }
+    var base by remember { mutableStateOf(Config.employees(context)) }
+    val dwMap = remember { mutableStateMapOf<Int, String>() }
+    val mbMap = remember { mutableStateMapOf<Int, String>() }
+    LaunchedEffect(base) {
+        base.forEach { e ->
+            if (!dwMap.containsKey(e.id)) dwMap[e.id] = e.dailyWage.toInt().toString()
+            if (!mbMap.containsKey(e.id)) mbMap[e.id] = if (e.monthlyBase > 0) e.monthlyBase.toInt().toString() else ""
+        }
+    }
     base.forEach { e ->
         Row(
             Modifier.fillMaxWidth().padding(vertical = 6.dp),
@@ -439,6 +445,11 @@ private fun EmployeeEditor(context: Context) {
             Text(e.nameZh, Modifier.width(56.dp), fontSize = 14.sp, color = c.textPrimary)
             TextField(value = dwMap[e.id] ?: "", onValueChange = { dwMap[e.id] = it }, label = "日薪", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
             TextField(value = mbMap[e.id] ?: "", onValueChange = { mbMap[e.id] = it }, label = "月薪", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+            GlassButton("删", modifier = Modifier.width(48.dp)) {
+                Config.removeEmployee(context, e.id)
+                dwMap.remove(e.id); mbMap.remove(e.id)
+                base = Config.employees(context)
+            }
         }
     }
     Spacer(Modifier.height(8.dp))
@@ -452,5 +463,25 @@ private fun EmployeeEditor(context: Context) {
             }
         )
         Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+    }
+    Spacer(Modifier.height(12.dp))
+    var nl by remember { mutableStateOf("") }
+    var nz by remember { mutableStateOf("") }
+    var nd by remember { mutableStateOf("") }
+    Text("添加员工", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+    Spacer(Modifier.height(6.dp))
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        TextField(value = nl, onValueChange = { nl = it }, label = "老挝名", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+        TextField(value = nz, onValueChange = { nz = it }, label = "中文名", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+    }
+    Spacer(Modifier.height(6.dp))
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        TextField(value = nd, onValueChange = { nd = it }, label = "日薪", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+        GlassButton("添加", primary = true, modifier = Modifier.width(80.dp)) {
+            if (nl.isNotBlank() || nz.isNotBlank()) {
+                Config.addEmployee(context, nl, nz, nd.toDoubleOrNull() ?: 0.0)
+                nl = ""; nz = ""; nd = ""; base = Config.employees(context)
+            }
+        }
     }
 }
