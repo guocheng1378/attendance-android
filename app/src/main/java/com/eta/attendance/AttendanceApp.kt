@@ -62,34 +62,32 @@ fun AttendanceApp() {
 
 @Composable
 private fun AttendanceScreen() {
-    val backStack = rememberNavBackStack<Route>(Route.CheckIn)
+    val backStack = rememberNavBackstack<Route>(Route.CheckIn)
     val navController = remember { NavController(backStack) }
     val c = LocalAppColors.current
-    // 背景专用 backdrop：只录制 GlassBackground（不含面板），供卡片/底栏采样 → 打破自引用递归
     val backdropBg = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
-    Column(Modifier.fillMaxSize()) {
-        // 内容区：占满除底栏外的全部高度（weight 而非 Box.align，确保底栏稳居底部）
-        Box(Modifier.fillMaxWidth().weight(1f)) {
-            // 背景渐变（同时录进 backdropBg，供面板磨砂采样）
-            Box(Modifier.fillMaxSize().layerBackdrop(backdropBg)) {
-                GlassBackground()
-            }
-            // 内容绘制在背景之上；面板采样 backdropBg（仅背景、不含面板本身 → 不递归）
-            CompositionLocalProvider(LocalBackdrop provides backdropBg) {
-                NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
-                    entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
-                    entry<Route.Stats> { StatsPanel() }
-                    entry<Route.Salary> { SalaryPanel2() }
-                    entry<Route.Settings> { SettingsPanel() }
+    Box(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().layerBackdrop(backdropBg)) {
+            GlassBackground()
+        }
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxWidth().weight(1f)) {
+                CompositionLocalProvider(LocalBackdrop provides backdropBg) {
+                    NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
+                        entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
+                        entry<Route.Stats> { StatsPanel() }
+                        entry<Route.Salary> { SalaryPanel2() }
+                        entry<Route.Settings> { SettingsPanel() }
+                    }
                 }
             }
-        }
-        // 底栏：Column 第二项，固定高度、稳居底部
-        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
-            BottomNavBar(navController, backdropBg)
+            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
+                BottomNavBar(navController, backdropBg)
+            }
         }
     }
 }
+
 
 
 
