@@ -245,6 +245,7 @@ internal fun BottomNavBar(navController: NavController, backdrop: LayerBackdrop)
         BoxWithConstraints(
             Modifier
                 .fillMaxWidth()
+                .height(64.dp)
                 .clip(pill)
                 .textureBlur(
                     backdrop = backdrop,
@@ -254,7 +255,6 @@ internal fun BottomNavBar(navController: NavController, backdrop: LayerBackdrop)
                     colors = glassColors,
                     highlight = highlight,
                 )
-                .wrapContentHeight()
                 .padding(6.dp),
         ) {
             val itemW = maxWidth / labels.size
