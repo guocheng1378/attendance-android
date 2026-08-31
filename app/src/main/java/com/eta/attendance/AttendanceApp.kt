@@ -74,19 +74,21 @@ private fun AttendanceScreen() {
         Box(Modifier.fillMaxSize().layerBackdrop(backdropBg)) {
             GlassBackground()
         }
-        // 内容层：后绘制=在上层；卡片采样 backdropBg（仅背景）→ 无递归、不闪退
-        Box(Modifier.fillMaxSize().layerBackdrop(backdropContent)) {
-            CompositionLocalProvider(LocalBackdrop provides backdropBg) {
-                NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
-                    entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
-                    entry<Route.Stats> { StatsPanel() }
-                    entry<Route.Salary> { SalaryPanel2() }
-                    entry<Route.Settings> { SettingsPanel() }
+        // 内容 + 底栏：用 Column 让底栏稳居底部（不依赖 BoxScope.align，避免被内容盒顶到顶部）
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxWidth().weight(1f).layerBackdrop(backdropContent)) {
+                CompositionLocalProvider(LocalBackdrop provides backdropBg) {
+                    NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
+                        entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
+                        entry<Route.Stats> { StatsPanel() }
+                        entry<Route.Salary> { SalaryPanel2() }
+                        entry<Route.Settings> { SettingsPanel() }
+                    }
                 }
             }
-        }
-        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
-            BottomNavBar(navController, backdropBg)
+            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
+                BottomNavBar(navController, backdropBg)
+            }
         }
     }
 }
