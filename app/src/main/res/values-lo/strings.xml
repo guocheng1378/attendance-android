@@ -165,4 +165,24 @@
     <string name="notif_title">ແຈ້ງເຕືອນເຊັກອິນ</string>
     <string name="notif_no_records">%s ຍັງບໍ່ມີການເຊັກອິນ, ຢ່າລືມບັນທຶກ</string>
     <string name="notif_missing_fmt">%s ຍັງ %d ຄົນບໍ່ເຊັກອິນ: %s</string>
+    <!-- 工资核算页 SalaryPanel2 -->
+    <string name="sp_title">ສະຫຼຸບເງິນເດືອນຕາມການເຂົ້າວຽກ</string>
+    <string name="sp_total_net">ລວມເງິນຈ່າຍຈິງທຸກຄົນເດືອນນີ້</string>
+    <string name="sp_total_payable">ລວມຄວນຈ່າຍ</string>
+    <string name="sp_total_advance">ລວມເງິນກູ້</string>
+    <string name="sp_headcount">ຈຳນວນຄົນ</string>
+    <string name="sp_person_fmt">%d ຄົນ</string>
+    <string name="sp_no_emp">ຍັງບໍ່ມີພະນັກງານ, ໄປທີ່ ຕັ້ງຄ່າ › ເງິນເດືອນ › ເງິນເດືອນພະນັກງານ ເພື່ອເພີ່ມ</string>
+    <string name="sp_attend_fmt">ເຂົ້າວຽກ %1$s / ຄວນເຂົ້າ %2$d ມື້ (%3$d ເຕັມ %4$d ຄ້າງ %5$d ບໍ່ມາ)</string>
+    <string name="sp_net_lak">ຈ່າຍຈິງ LAK</string>
+    <string name="sp_monthly">ເງິນເດືອນ</string>
+    <string name="sp_bonus">ໂບນັດ</string>
+    <string name="sp_penalty_fmt">ຫັກ (%d ມື້)</string>
+    <string name="sp_payable">ຄວນຈ່າຍ</string>
+    <string name="sp_advance_hint">ເງິນກູ້ (LAK)</string>
+    <string name="sp_remark">ໝາຍເຫດ</string>
+    <string name="sp_export_csv">ສົ່ງອອກເງິນເດືອນເດືອນນີ້ CSV</string>
+    <string name="sp_exported_fmt">ສົ່ງອອກ %1$s ແລ້ວ</string>
+    <string name="sp_ym_fmt">%1$s/%2$s</string>
+    <string name="sp_rule">ກົດເກນ: ເງິນຕໍ່ມື້=(ເງິນເດືອນ+ໂບນັດ)÷ຈຳນວນມື້ໃນເດືອນ; ມື້ຄວນເຂົ້າ=ຈຳນວນມື້−ມື້ບໍ່ມາທຸກຄົນ−2; ນັບເຂົ້າວຽກ=ເຕັມ×1+ຄ້າງ×0.5; ເຂົ້າ&lt;ຄວນເຂົ້າ ຫັກ 1 ມື້, &lt;ຄວນເຂົ້າ÷2 ຫັກ 2 ມື້; ຄວນຈ່າຍ=ເຂົ້າ×ເງິນມື້−ຫັກ−ເງິນກູ້; ຈ່າຍຈິງ=ຄວນຈ່າຍ+ເງິນກູ້ (ຍອດຮັບທັງເດືອນ).</string>
 </resources>

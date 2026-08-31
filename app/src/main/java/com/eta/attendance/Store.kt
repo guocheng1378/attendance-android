@@ -111,6 +111,12 @@ object AttendanceStore {
         return map
     }
 
+    /** 当月「全员没来」天数：某天有考勤记录且当天无人到岗（无 FULL/HALF，全部 ABSENT）。 */
+    fun companyAbsentDays(c: Context, yearMonth: String): Int {
+        val byDate = all(c).filter { it.date.startsWith(yearMonth) }.groupBy { it.date }
+        return byDate.count { (_, recs) -> recs.isNotEmpty() && recs.none { it.status != Status.ABSENT } }
+    }
+
     /** CSV 字段转义：含逗号/引号/换行的字段加双引号 */
     private fun csvField(v: String): String {
         return if (v.contains(',') || v.contains('"') || v.contains('\n')) {

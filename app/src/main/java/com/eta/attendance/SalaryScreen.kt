@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,6 +44,7 @@ internal fun SalaryPanel2() {
     val rmMap = remember(ym) { mutableStateMapOf<Int, String>() }
 
     val summary = AttendanceStore.monthSummary(context, ym)
+    val closureDays = AttendanceStore.companyAbsentDays(context, ym)
     val pays = employees.map { e ->
         val arr = summary[e.id] ?: IntArray(3)
         SalaryEngine.compute(
@@ -50,6 +52,7 @@ internal fun SalaryPanel2() {
             full = arr[0], half = arr[1], absent = arr[2],
             advance = advMap[e.id]?.toDoubleOrNull() ?: Config.getAdvance(context, e.id, ym),
             remark = rmMap[e.id] ?: Config.getRemark(context, e.id, ym),
+            closureDays = closureDays,
         )
     }
     val totalAdv = pays.sumOf { it.advance }
@@ -62,7 +65,7 @@ internal fun SalaryPanel2() {
             .padding(16.dp).padding(bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("考勤工资核算", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+        Text(stringResource(R.string.sp_title), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
 
         // 月份切换
         GlassCard(Modifier.fillMaxWidth()) {
@@ -72,24 +75,25 @@ internal fun SalaryPanel2() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 GlassButton("‹", modifier = Modifier.width(56.dp)) { ym = shiftYm(ym, -1) }
-                Text(ymLabel(ym), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
+                val ymp = ym.split("-")
+                Text(if (ymp.size == 2) stringResource(R.string.sp_ym_fmt, ymp[0], ymp[1]) else ym, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
                 GlassButton("›", modifier = Modifier.width(56.dp)) { ym = shiftYm(ym, 1) }
             }
         }
 
         // 全员总工资（先出总额）
         GlassCard(Modifier.fillMaxWidth()) {
-            Text("本月全员实发合计", fontSize = 13.sp, color = c.textPrimary.copy(alpha = 0.85f))
+            Text(stringResource(R.string.sp_total_net), fontSize = 13.sp, color = c.textPrimary.copy(alpha = 0.85f))
             Text("${k(totalNet)} LAK", fontSize = 34.sp, fontWeight = FontWeight.Bold, color = accent)
             Spacer(Modifier.height(10.dp))
-            SumRow("应发合计", "${k(totalPayable)} LAK")
-            SumRow("预支合计", "-${totalAdv.toLong()} LAK", neg = true)
-            SumRow("人数", "${pays.size} 人")
+            SumRow(stringResource(R.string.sp_total_payable), "${k(totalPayable)} LAK")
+            SumRow(stringResource(R.string.sp_total_advance), "-${totalAdv.toLong()} LAK", neg = true)
+            SumRow(stringResource(R.string.sp_headcount), stringResource(R.string.sp_person_fmt, pays.size))
         }
 
         if (employees.isEmpty()) {
             GlassCard(Modifier.fillMaxWidth()) {
-                Text("暂无员工，请到 设置 › 工资 › 员工薪资 添加。", fontSize = 13.sp, color = c.textSecondary)
+                Text(stringResource(R.string.sp_no_emp), fontSize = 13.sp, color = c.textSecondary)
             }
         }
 
@@ -105,20 +109,20 @@ internal fun SalaryPanel2() {
                         Text(p.nameZh.ifBlank { p.nameLo }, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
                         Text(p.nameLo, fontSize = 13.sp, color = c.textPrimary.copy(alpha = 0.8f))
                         Text(
-                            "出勤 ${fmtNum(p.attend)} / 应出勤 ${p.expectedDays} 天（${p.fullDays}全 ${p.halfDays}半 ${p.absentDays}缺）",
+                            stringResource(R.string.sp_attend_fmt, fmtNum(p.attend), p.expectedDays, p.fullDays, p.halfDays, p.absentDays),
                             fontSize = 12.sp, color = c.textPrimary.copy(alpha = 0.8f)
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text("${k(p.net)}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = accent)
-                        Text("实发 LAK", fontSize = 11.sp, color = c.textPrimary.copy(alpha = 0.7f))
+                        Text(stringResource(R.string.sp_net_lak), fontSize = 11.sp, color = c.textPrimary.copy(alpha = 0.7f))
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                SumRow("月薪", "${k(p.monthly)} LAK")
-                SumRow("奖金", "${k(p.bonus)} LAK")
-                if (p.penaltyDays > 0) SumRow("扣减（${p.penaltyDays} 天）", "-${k(p.penalty)} LAK", neg = true)
-                SumRow("应发", "${k(p.payable)} LAK")
+                SumRow(stringResource(R.string.sp_monthly), "${k(p.monthly)} LAK")
+                SumRow(stringResource(R.string.sp_bonus), "${k(p.bonus)} LAK")
+                if (p.penaltyDays > 0) SumRow(stringResource(R.string.sp_penalty_fmt, p.penaltyDays), "-${k(p.penalty)} LAK", neg = true)
+                SumRow(stringResource(R.string.sp_payable), "${k(p.payable)} LAK")
                 Spacer(Modifier.height(8.dp))
                 TextField(
                     value = advMap[p.employeeId] ?: (if (p.advance > 0) p.advance.toInt().toString() else ""),
@@ -126,7 +130,7 @@ internal fun SalaryPanel2() {
                         advMap[p.employeeId] = it
                         Config.setAdvance(context, p.employeeId, ym, it.toDoubleOrNull() ?: 0.0)
                     },
-                    label = "预支 (LAK)",
+                    label = stringResource(R.string.sp_advance_hint),
                     useLabelAsPlaceholder = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -137,19 +141,19 @@ internal fun SalaryPanel2() {
                         rmMap[p.employeeId] = it
                         Config.setRemark(context, p.employeeId, ym, it)
                     },
-                    label = "备注",
+                    label = stringResource(R.string.sp_remark),
                     useLabelAsPlaceholder = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
 
-        GlassButton("导出本月工资 CSV", modifier = Modifier.fillMaxWidth()) {
+        GlassButton(stringResource(R.string.sp_export_csv), modifier = Modifier.fillMaxWidth()) {
             exportMonth(context, ym, pays)
         }
 
         Text(
-            "规则：一天工资=(月薪+奖金)÷当月天数；应出勤=当月天数−${SalaryEngine.FREE_DAYS}；出勤折算=全天×1+半天×0.5；出勤<应出勤扣1天、<应出勤÷2扣2天；应发=出勤×日薪−扣减−预支；实发=应发+预支（当月总收款）。",
+            stringResource(R.string.sp_rule),
             fontSize = 11.sp, color = c.textPrimary.copy(alpha = 0.7f)
         )
     }
@@ -201,7 +205,7 @@ private fun exportMonth(context: Context, ym: String, pays: List<MonthPay>) {
     dir.mkdirs()
     val f = java.io.File(dir, "工资_$ym.csv")
     f.writeText(sb.toString())
-    Toast.makeText(context, "已导出 ${f.absolutePath}", Toast.LENGTH_LONG).show()
+    Toast.makeText(context, context.getString(R.string.sp_exported_fmt, f.absolutePath), Toast.LENGTH_LONG).show()
 }
 
 private fun csvEsc(v: String): String =

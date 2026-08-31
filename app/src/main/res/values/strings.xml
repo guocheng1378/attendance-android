@@ -165,4 +165,24 @@
     <string name="notif_title">考勤提醒</string>
     <string name="notif_no_records">%s 还没有任何签到记录，记得打卡</string>
     <string name="notif_missing_fmt">%s 还有 %d 人未签到：%s</string>
+    <!-- 工资核算页 SalaryPanel2 -->
+    <string name="sp_title">考勤工资核算</string>
+    <string name="sp_total_net">本月全员实发合计</string>
+    <string name="sp_total_payable">应发合计</string>
+    <string name="sp_total_advance">预支合计</string>
+    <string name="sp_headcount">人数</string>
+    <string name="sp_person_fmt">%d 人</string>
+    <string name="sp_no_emp">暂无员工，请到 设置 › 工资 › 员工薪资 添加。</string>
+    <string name="sp_attend_fmt">出勤 %1$s / 应出勤 %2$d 天（%3$d全 %4$d半 %5$d缺）</string>
+    <string name="sp_net_lak">实发 LAK</string>
+    <string name="sp_monthly">月薪</string>
+    <string name="sp_bonus">奖金</string>
+    <string name="sp_penalty_fmt">扣减（%d 天）</string>
+    <string name="sp_payable">应发</string>
+    <string name="sp_advance_hint">预支 (LAK)</string>
+    <string name="sp_remark">备注</string>
+    <string name="sp_export_csv">导出本月工资 CSV</string>
+    <string name="sp_exported_fmt">已导出 %1$s</string>
+    <string name="sp_ym_fmt">%1$s年%2$s月</string>
+    <string name="sp_rule">规则：一天工资=(月薪+奖金)÷当月天数；应出勤=当月天数−全员没来−2；出勤折算=全天×1+半天×0.5；出勤&lt;应出勤扣1天、&lt;应出勤÷2扣2天；应发=出勤×日薪−扣减−预支；实发=应发+预支（当月总收款）。</string>
 </resources>
