@@ -65,7 +65,7 @@ private fun AttendanceScreen() {
     val backStack = rememberNavBackStack<Route>(Route.CheckIn)
     val navController = remember { NavController(backStack) }
     val c = LocalAppColors.current
-    val backdrop = rememberLayerBackdrop { drawRect(c.background); drawContent() }
+    val backdrop = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
     Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
             GlassBackground()
