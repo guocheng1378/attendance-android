@@ -37,6 +37,8 @@ import top.yukonga.miuix.kmp.nav.core.NavController
 import top.yukonga.miuix.kmp.nav.core.NavDisplay
 import top.yukonga.miuix.kmp.nav.core.NavKey
 import top.yukonga.miuix.kmp.nav.core.rememberNavBackStack
+import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 
@@ -62,16 +64,20 @@ fun AttendanceApp() {
 private fun AttendanceScreen() {
     val backStack = rememberNavBackStack<Route>(Route.CheckIn)
     val navController = remember { NavController(backStack) }
+    val c = LocalAppColors.current
+    val backdrop = rememberLayerBackdrop { drawRect(c.background); drawContent() }
     Box(Modifier.fillMaxSize()) {
-        GlassBackground()
-        NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
-            entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
-            entry<Route.Stats> { StatsPanel() }
-            entry<Route.Salary> { SalaryPanel2() }
-            entry<Route.Settings> { SettingsPanel() }
+        Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
+            GlassBackground()
+            NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
+                entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
+                entry<Route.Stats> { StatsPanel() }
+                entry<Route.Salary> { SalaryPanel2() }
+                entry<Route.Settings> { SettingsPanel() }
+            }
         }
         Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
-            BottomNavBar(navController)
+            BottomNavBar(navController, backdrop)
         }
     }
 }

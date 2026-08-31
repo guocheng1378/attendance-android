@@ -44,6 +44,11 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
+import top.yukonga.miuix.kmp.blur.LayerBackdrop
+import top.yukonga.miuix.kmp.blur.textureBlur
+import top.yukonga.miuix.kmp.blur.BlurDefaults
+import top.yukonga.miuix.kmp.blur.BlendColorEntry
+import top.yukonga.miuix.kmp.blur.highlight.Highlight
 import top.yukonga.miuix.kmp.nav.core.NavController
 
 /** 动态渐变背景：随配色变化，深色下整体压暗 */
@@ -190,7 +195,7 @@ internal fun StatusChip(label: String, selected: Boolean, onClick: () -> Unit) {
 
 /** 悬浮液态玻璃底部导航：miuix-blur 真背景模糊 + 大圆角 + 悬浮阴影 + 滑动胶囊指示器 */
 @Composable
-internal fun BottomNavBar(navController: NavController) {
+internal fun BottomNavBar(navController: NavController, backdrop: LayerBackdrop) {
     val context = LocalContext.current
     val c = LocalAppColors.current
     val labels = listOf(
@@ -202,12 +207,24 @@ internal fun BottomNavBar(navController: NavController) {
     val routes = listOf(Route.CheckIn, Route.Stats, Route.Salary, Route.Settings)
     val current = navController.backStack.lastOrNull()
     val selectedTab = routes.indexOfFirst { it == current }.coerceAtLeast(0)
-    val backdrop = rememberLayerBackdrop { drawContent() }
+    val colorScheme = MiuixTheme.colorScheme
+    val highlight = if (c.isDark) Highlight.GlassStrokeMiddleDark else Highlight.GlassStrokeMiddleLight
     val pill = RoundedCornerShape(26.dp)
     val selPill = RoundedCornerShape(20.dp)
     val indicator by animateFloatAsState(selectedTab.toFloat(), animationSpec = tween(260), label = "navInd")
     Box(Modifier.fillMaxWidth().shadow(18.dp, pill, ambientColor = Color.Black.copy(alpha = 0.12f), spotColor = Color.Black.copy(alpha = 0.28f))) {
-        BoxWithConstraints(Modifier.fillMaxWidth().clip(pill).background(c.navFill).border(1.dp, c.glassBorder, pill).padding(6.dp).layerBackdrop(backdrop)) {
+        BoxWithConstraints(
+            Modifier
+                .fillMaxWidth()
+                .textureBlur(
+                    backdrop = backdrop,
+                    shape = pill,
+                    blurRadius = 25f,
+                    colors = BlurDefaults.blurColors(blendColors = listOf(BlendColorEntry(color = colorScheme.surface.copy(0.8f)))),
+                    highlight = highlight,
+                )
+                .padding(6.dp),
+        ) {
             val itemW = maxWidth / labels.size
             Box(Modifier.offset(x = itemW * indicator).width(itemW).fillMaxHeight().clip(selPill).background(c.navSelected))
             Row(Modifier.fillMaxWidth()) {
