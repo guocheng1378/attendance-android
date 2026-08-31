@@ -29,6 +29,7 @@ data class PayInput(
     val dailyWage: Double,
     val monthlyBase: Double = 0.0,         // >0 则按月薪折算，否则按日薪×出勤
     val bonus: Double = 0.0,
+    val advance: Double = 0.0,
     val fullDays: Int = 0,
     val halfDays: Int = 0,
     val absentDays: Int = 0,
@@ -49,6 +50,7 @@ data class PayBreakdown(
     val overtimePay: Double,
     val allowance: Double,
     val bonus: Double,
+    val advance: Double,
     val deduction: Double,
     val netPay: Double,
 )
@@ -80,13 +82,13 @@ object SalaryEngine {
 
         val allowance = r.mealAllowance + r.transportAllowance + r.housingAllowance + i.extraAllowance
         val deduction = i.lateCount * r.lateDeduction
-        val netPay = basePay + overtimePay + allowance + i.bonus - deduction
+        val netPay = basePay + overtimePay + allowance + i.bonus - deduction - i.advance
 
-        return PayBreakdown(attendDays, basePay, overtimePay, allowance, i.bonus, deduction, netPay)
+        return PayBreakdown(attendDays, basePay, overtimePay, allowance, i.bonus, i.advance, deduction, netPay)
     }
 
     /** 从考勤记录聚合出天数/迟到部分，再叠加薪资参数得到完整 PayInput */
-    fun aggregate(records: List<AttendanceRecord>, dailyWage: Double, monthlyBase: Double = 0.0, bonus: Double = 0.0): PayInput {
+    fun aggregate(records: List<AttendanceRecord>, dailyWage: Double, monthlyBase: Double = 0.0, bonus: Double = 0.0, advance: Double = 0.0): PayInput {
         var full = 0; var half = 0; var absent = 0; var late = 0
         records.forEach { rec ->
             when (rec.status) {
@@ -100,6 +102,7 @@ object SalaryEngine {
             dailyWage = dailyWage,
             monthlyBase = monthlyBase,
             bonus = bonus,
+            advance = advance,
             fullDays = full,
             halfDays = half,
             absentDays = absent,

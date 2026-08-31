@@ -50,7 +50,7 @@ internal fun SalaryPanel2() {
     val empRecords = all.value.filter { it.employeeId == empId }
     val b = rangeBounds(range, anchor)
     val inRange = empRecords.filter { it.date >= b.start && it.date < b.end }
-    val input = SalaryEngine.aggregate(inRange, emp?.dailyWage ?: 0.0, emp?.monthlyBase ?: 0.0, emp?.bonus ?: 0.0)
+    val input = SalaryEngine.aggregate(inRange, emp?.dailyWage ?: 0.0, emp?.monthlyBase ?: 0.0, emp?.bonus ?: 0.0, emp?.advance ?: 0.0)
     val pay = SalaryEngine.compute(input, rule)
     val accent = c.palette.accent
 
@@ -101,6 +101,7 @@ internal fun SalaryPanel2() {
             PayRow("加班费", "${pay.overtimePay.toLong()} LAK", c)
             PayRow("补贴", "${pay.allowance.toLong()} LAK", c)
             PayRow("奖金", "${pay.bonus.toLong()} LAK", c)
+            PayRow("预支", "-${pay.advance.toLong()} LAK", c, negative = true)
             PayRow("扣款", "-${pay.deduction.toLong()} LAK", c, negative = true)
         }
 
@@ -224,7 +225,7 @@ private fun buildChart(
     val y = c.get(Calendar.YEAR); val m = c.get(Calendar.MONTH) + 1; val d = c.get(Calendar.DAY_OF_MONTH)
     fun net(pred: (AttendanceRecord) -> Boolean): Double =
         SalaryEngine.compute(
-            SalaryEngine.aggregate(recs.filter(pred), emp.dailyWage, emp.monthlyBase, emp.bonus), rule
+            SalaryEngine.aggregate(recs.filter(pred), emp.dailyWage, emp.monthlyBase, emp.bonus, emp.advance), rule
         ).netPay
     return when (range) {
         PayRange.DAY -> {
@@ -251,7 +252,7 @@ private fun exportRange(context: Context, emp: Employee?, recs: List<AttendanceR
         sb.append(r.date).append(',').append(r.status.name).append(',').append(daysOf(r.status)).append('\n')
     }
     sb.append("\n出勤天数,${pay.attendDays}\n基本工资,${pay.basePay.toLong()}\n加班费,${pay.overtimePay.toLong()}\n")
-    sb.append("补贴,${pay.allowance.toLong()}\n奖金,${pay.bonus.toLong()}\n扣款,${pay.deduction.toLong()}\n实发,${pay.netPay.toLong()}\n")
+    sb.append("补贴,${pay.allowance.toLong()}\n奖金,${pay.bonus.toLong()}\n预支,${pay.advance.toLong()}\n扣款,${pay.deduction.toLong()}\n实发,${pay.netPay.toLong()}\n")
     val name = "salary_${emp?.nameZh ?: "x"}_${SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(Date())}.csv"
     val dir = java.io.File(context.getExternalFilesDir(null), "exports")
     dir.mkdirs()

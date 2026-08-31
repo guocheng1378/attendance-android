@@ -14,6 +14,7 @@ data class Employee(
     val dailyWage: Double = 150000.0,
     val monthlyBase: Double = 0.0,
     val bonus: Double = 0.0,
+    val advance: Double = 0.0,
 )
 
 /**
@@ -124,7 +125,7 @@ object Config {
                     Employee(
                         o.getInt("id"), o.getString("nameLo"), o.getString("nameZh"),
                         o.optString("position"), o.optDouble("dailyWage", 150000.0),
-                        o.optDouble("monthlyBase", 0.0), o.optDouble("bonus", 0.0)
+                        o.optDouble("monthlyBase", 0.0), o.optDouble("bonus", 0.0), o.optDouble("advance", 0.0)
                     )
                 )
             }
@@ -137,7 +138,7 @@ object Config {
             arr.put(
                 JSONObject().put("id", e.id).put("nameLo", e.nameLo).put("nameZh", e.nameZh)
                     .put("position", e.position).put("dailyWage", e.dailyWage)
-                    .put("monthlyBase", e.monthlyBase).put("bonus", e.bonus)
+                    .put("monthlyBase", e.monthlyBase).put("bonus", e.bonus).put("advance", e.advance)
             )
         }
         sp(c).edit().putString(KEY_EMPLOYEES, arr.toString()).apply()

@@ -437,25 +437,33 @@ private fun EmployeeEditor(context: Context) {
     var base by remember { mutableStateOf(Config.employees(context)) }
     val dwMap = remember { mutableStateMapOf<Int, String>() }
     val mbMap = remember { mutableStateMapOf<Int, String>() }
+    val bnMap = remember { mutableStateMapOf<Int, String>() }
+    val adMap = remember { mutableStateMapOf<Int, String>() }
     LaunchedEffect(base) {
         base.forEach { e ->
             if (!dwMap.containsKey(e.id)) dwMap[e.id] = e.dailyWage.toInt().toString()
             if (!mbMap.containsKey(e.id)) mbMap[e.id] = if (e.monthlyBase > 0) e.monthlyBase.toInt().toString() else ""
+            if (!bnMap.containsKey(e.id)) bnMap[e.id] = if (e.bonus > 0) e.bonus.toInt().toString() else ""
+            if (!adMap.containsKey(e.id)) adMap[e.id] = if (e.advance > 0) e.advance.toInt().toString() else ""
         }
     }
     base.forEach { e ->
-        Row(
-            Modifier.fillMaxWidth().padding(vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(e.nameZh, Modifier.width(56.dp), fontSize = 14.sp, color = c.textPrimary)
-            TextField(value = dwMap[e.id] ?: "", onValueChange = { dwMap[e.id] = it }, label = "日薪", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-            TextField(value = mbMap[e.id] ?: "", onValueChange = { mbMap[e.id] = it }, label = "月薪", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
-            GlassButton("删", modifier = Modifier.width(48.dp)) {
-                Config.removeEmployee(context, e.id)
-                dwMap.remove(e.id); mbMap.remove(e.id)
-                base = Config.employees(context)
+        Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(e.nameZh, Modifier.width(56.dp), fontSize = 14.sp, color = c.textPrimary)
+                GlassButton("删", modifier = Modifier.width(48.dp)) {
+                    Config.removeEmployee(context, e.id)
+                    dwMap.remove(e.id); mbMap.remove(e.id); bnMap.remove(e.id); adMap.remove(e.id)
+                    base = Config.employees(context)
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextField(value = dwMap[e.id] ?: "", onValueChange = { dwMap[e.id] = it }, label = "日薪", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+                TextField(value = mbMap[e.id] ?: "", onValueChange = { mbMap[e.id] = it }, label = "月薪", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+            }
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextField(value = bnMap[e.id] ?: "", onValueChange = { bnMap[e.id] = it }, label = "奖金", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
+                TextField(value = adMap[e.id] ?: "", onValueChange = { adMap[e.id] = it }, label = "预支", useLabelAsPlaceholder = true, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -465,7 +473,9 @@ private fun EmployeeEditor(context: Context) {
             context, base.map { e ->
                 e.copy(
                     dailyWage = dwMap[e.id]?.toDoubleOrNull() ?: e.dailyWage,
-                    monthlyBase = mbMap[e.id]?.toDoubleOrNull() ?: 0.0
+                    monthlyBase = mbMap[e.id]?.toDoubleOrNull() ?: 0.0,
+                    bonus = bnMap[e.id]?.toDoubleOrNull() ?: 0.0,
+                    advance = adMap[e.id]?.toDoubleOrNull() ?: 0.0
                 )
             }
         )
@@ -488,47 +498,6 @@ private fun EmployeeEditor(context: Context) {
             if (nl.isNotBlank() || nz.isNotBlank()) {
                 Config.addEmployee(context, nl, nz, nd.toDoubleOrNull() ?: 0.0)
                 nl = ""; nz = ""; nd = ""; base = Config.employees(context)
-            }
-        }
-    }
-}
-
-@Composable
-private fun MonthGrid(employees: List<Employee>, recs: List<AttendanceRecord>, ym: String) {
-    val c = LocalAppColors.current
-    val grid = HashMap<Int, HashMap<Int, AttendanceRecord>>()
-    recs.forEach { r ->
-        if (r.date.startsWith(ym)) {
-            val d = r.date.substring(8).toIntOrNull() ?: return@forEach
-            grid.getOrPut(r.employeeId) { HashMap() }[d] = r
-        }
-    }
-    val parts = ym.split("-")
-    val cal = Calendar.getInstance()
-    cal.set(parts[0].toInt(), parts[1].toInt() - 1, 1)
-    val nDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
-    Column(Modifier.horizontalScroll(rememberScrollState())) {
-        Row {
-            Text("员工", Modifier.width(72.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
-            (1..nDays).forEach { Text("$it", Modifier.width(28.dp), fontSize = 11.sp, color = c.textSecondary) }
-        }
-        Spacer(Modifier.height(4.dp))
-        employees.forEach { e ->
-            Row(Modifier.padding(vertical = 2.dp)) {
-                Text(e.nameZh, Modifier.width(72.dp), fontSize = 12.sp, color = c.textPrimary)
-                val byDay = grid[e.id]
-                (1..nDays).forEach { d ->
-                    val r = byDay?.get(d)
-                    val sym: String
-                    val col: Color
-                    when (r?.status) {
-                        Status.FULL -> { if (r.late) { sym = "迟"; col = Color(0xFFFFB74D) } else { sym = "√"; col = Color(0xFF4CAF50) } }
-                        Status.HALF -> { sym = "◇"; col = Color(0xFF64B5F6) }
-                        Status.ABSENT -> { sym = "×"; col = Color(0xFFEF5350) }
-                        null -> { sym = "·"; col = c.textSecondary.copy(alpha = 0.4f) }
-                    }
-                    Text(sym, Modifier.width(28.dp), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = col)
-                }
             }
         }
     }
