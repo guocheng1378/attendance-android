@@ -246,12 +246,12 @@ object Config {
         val secure = runCatching { secureSp(c) }.getOrNull()
         return secure?.getString(KEY_DAV_PASS, null) ?: sp(c).getString(KEY_DAV_PASS, "") ?: ""
     }
-    fun davPath(c: Context): String = sp(c).getString(KEY_DAV_PATH, "/attendance_backup.json") ?: "/attendance_backup.json"
+    fun davPath(c: Context): String = sp(c).getString(KEY_DAV_PATH, "/attendance/attendance_backup.json") ?: "/attendance/attendance_backup.json"
     fun saveDav(c: Context, url: String, user: String, pass: String, path: String) {
         sp(c).edit()
             .putString(KEY_DAV_URL, url.trim())
             .putString(KEY_DAV_USER, user.trim())
-            .putString(KEY_DAV_PATH, path.ifBlank { "/attendance_backup.json" })
+            .putString(KEY_DAV_PATH, path.ifBlank { "/attendance/attendance_backup.json" })
             .apply()
         // 密码存加密区
         val secure = runCatching { secureSp(c) }.getOrNull()

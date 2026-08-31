@@ -19,7 +19,7 @@ class AutoBackupWorker(context: Context, params: WorkerParameters) :
         val context = applicationContext
         if (!Config.davEnabled(context)) return Result.success()
         return try {
-            val ok = AttendanceStore.pushToDav(context)
+            val ok = AttendanceStore.pushToDav(context).ok
             if (ok) Reminder.notifyNow(context, "考勤数据已自动备份到云端")
             Result.success()
         } catch (e: Exception) {

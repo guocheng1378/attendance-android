@@ -701,8 +701,8 @@ private fun SettingsPanel() {
                             davUploadLoading = true
                             scope.launch {
                                 try {
-                                    val ok = AttendanceStore.pushToDav(context)
-                                    Toast.makeText(context, if (ok) context.getString(R.string.uploaded) else context.getString(R.string.upload_failed), Toast.LENGTH_SHORT).show()
+                                    val res = AttendanceStore.pushToDav(context)
+                                    Toast.makeText(context, if (res.ok) context.getString(R.string.uploaded) else res.message, Toast.LENGTH_LONG).show()
                                 } finally { davUploadLoading = false }
                             }
                         }

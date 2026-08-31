@@ -9,6 +9,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -273,14 +274,24 @@ object AttendanceStore {
         runCatching { client.newCall(req).execute().use { it.isSuccessful } }.getOrDefault(false)
     }
 
-    /** WebDAV 上传备份（坚果云）。IO 线程执行。 */
-    suspend fun pushToDav(c: Context): Boolean = withContext(Dispatchers.IO) {
-        if (!Config.davEnabled(c)) return@withContext false
+    /** WebDAV 上传结果：ok=是否成功，code=HTTP 码（-1 网络错误，0 未配置），message=可展示原因。 */
+    data class DavResult(val ok: Boolean, val code: Int, val message: String)
+
+    /** WebDAV 上传备份（坚果云）。先确保父文件夹存在（坚果云不允许在根目录放文件），再 PUT。IO 线程执行。 */
+    suspend fun pushToDav(c: Context): DavResult = withContext(Dispatchers.IO) {
+        if (!Config.davEnabled(c)) return@withContext DavResult(false, 0, "未配置 WebDAV")
+        ensureParentFolders(c)?.let { return@withContext it }
         val req = Request.Builder().url(davFullUrl(c))
             .header("Authorization", davAuth(c))
             .put(exportBackup(c).toRequestBody(JSON))
             .build()
-        runCatching { client.newCall(req).execute().use { it.isSuccessful } }.getOrDefault(false)
+        runCatching {
+            client.newCall(req).execute().use { resp ->
+                val code = resp.code
+                if (resp.isSuccessful) DavResult(true, code, "已上传")
+                else DavResult(false, code, davHint(code))
+            }
+        }.getOrElse { DavResult(false, -1, "网络错误：${it.message}") }
     }
 
     /** WebDAV 下载并导入，返回条数（-1 失败）。IO 线程执行。 */
@@ -296,10 +307,45 @@ object AttendanceStore {
         }.getOrDefault(-1)
     }
 
+    /**
+     * 归一化完整 URL：坚果云等 WebDAV 不允许把文件放在共享根目录，
+     * 若路径没有父文件夹（如 /attendance_backup.json），自动归到 /attendance/ 子目录。
+     */
     private fun davFullUrl(c: Context): String {
-        val base = Config.davUrl(c).trimEnd('/')
-        val path = Config.davPath(c)
-        return base + (if (path.startsWith("/")) path else "/$path")
+        val base = Config.davUrl(c).trim().trimEnd('/')
+        val segs = Config.davPath(c).split('/').filter { it.isNotBlank() }
+        val fileName = segs.lastOrNull() ?: "attendance_backup.json"
+        val dirs = segs.dropLast(1).ifEmpty { listOf("attendance") }
+        return base + "/" + (dirs + fileName).joinToString("/")
+    }
+
+    /** 逐级 MKCOL 创建父文件夹；已存在(405/204)或新建(201)都继续，认证失败则返回错误。 */
+    private fun ensureParentFolders(c: Context): DavResult? {
+        val uri = runCatching { URI(davFullUrl(c)) }.getOrNull() ?: return null
+        val scheme = uri.scheme ?: return null
+        val authority = uri.authority ?: return null
+        val dirSegs = (uri.rawPath ?: "").split('/').filter { it.isNotBlank() }.dropLast(1)
+        var acc = ""
+        for (seg in dirSegs) {
+            acc += "/" + seg
+            val mkUrl = "$scheme://$authority$acc/"
+            val req = Request.Builder().url(mkUrl)
+                .header("Authorization", davAuth(c))
+                .method("MKCOL", null)
+                .build()
+            val code = runCatching { client.newCall(req).execute().use { it.code } }
+                .getOrElse { return DavResult(false, -1, "网络错误：${it.message}") }
+            if (code == 401 || code == 403) return DavResult(false, code, davHint(code))
+        }
+        return null
+    }
+
+    private fun davHint(code: Int): String = when (code) {
+        401 -> "401 账号或应用密码错误（坚果云请用「应用密码」：账户信息→安全选项→添加应用）"
+        403 -> "403 无权限，请检查应用密码"
+        404 -> "404 路径不存在（坚果云根目录不能放文件，已自动改用 /attendance/ 子目录）"
+        409 -> "409 上级文件夹不存在"
+        else -> "HTTP $code"
     }
 
     private fun davAuth(c: Context): String {
