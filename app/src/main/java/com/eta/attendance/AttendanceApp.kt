@@ -69,9 +69,11 @@ private fun AttendanceScreen() {
     val backdropBg = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
     // 主层 backdrop：录制 背景+内容，仅用于本层绘制，不被任何卡片采样
     val backdropMain = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
-    Box(Modifier.fillMaxSize()) {
-        // 主层：内容与背景同处一个 layerBackdrop 盒内就地绘制（还原可工作结构）
-        Box(Modifier.fillMaxSize().layerBackdrop(backdropMain)) {
+    Column(Modifier.fillMaxSize()) {
+        // 内容区：占满除底栏外的全部高度（weight 而非 Box.align，避免底栏浮到顶端）
+        Box(Modifier.fillMaxWidth().weight(1f)) {
+            // 主层：背景+内容同处一个 layerBackdrop 盒内就地绘制
+            Box(Modifier.fillMaxSize().layerBackdrop(backdropMain)) {
             // 仅把背景录进 backdropBg：卡片采样它、而它不含面板本身 → 不递归
             Box(Modifier.fillMaxSize().layerBackdrop(backdropBg)) {
                 GlassBackground()
@@ -85,8 +87,9 @@ private fun AttendanceScreen() {
                 }
             }
         }
-        // 底栏：与内容盒并列的第二个子节点，align(BottomCenter) 生效（同可工作结构）
-        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
+        }
+        // 底栏：作为 Column 第二项，固定高度、稳居底部
+        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
             BottomNavBar(navController, backdropBg)
         }
     }
@@ -118,7 +121,7 @@ private fun CheckInPanel(onOpenSettings: () -> Unit) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
-            .padding(bottom = 110.dp)
+            .padding(bottom = 24.dp)
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column {
@@ -206,7 +209,7 @@ private fun StatsPanel() {
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(16.dp).padding(bottom = 110.dp)
+            .padding(16.dp).padding(bottom = 24.dp)
     ) {
         Text(context.getString(R.string.month_summary), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
         Spacer(Modifier.height(16.dp))
@@ -278,7 +281,7 @@ private fun SettingsPanel() {
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(16.dp).padding(bottom = 110.dp)
+            .padding(16.dp).padding(bottom = 24.dp)
     ) {
         if (sub == 0) {
             Text(context.getString(R.string.tab_settings), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
