@@ -3,7 +3,7 @@ package com.eta.attendance
 import android.content.Context
 import android.content.SharedPreferences
 
-/** 员工：老挝文名 + 中文名（复用原 config.js EMPLOYEES）。 */
+/** 员工：老挝文名 + 中文名（来自真实考勤表 8月考勤表.csv）。 */
 data class Employee(val id: Int, val nameLo: String, val nameZh: String)
 
 /**
@@ -20,18 +20,19 @@ object Config {
     private const val KEY_SB_KEY = "supabase_key"
 
     val EMPLOYEES = listOf(
-        Employee(1, "ໂອນ", "盘"),
-        Employee(2, "ມູ", "姆"),
-        Employee(3, "ຣິມ", "松"),
-        Employee(4, "ບາວ", "巴"),
-        Employee(5, "ຊົງ", "恩"),
-        Employee(6, "ຈົງ", "乐昂"),
-        Employee(7, "ເບີນ", "文"),
-        Employee(8, "ຕົງ", "米"),
-        Employee(9, "ຈົງ", "拽"),
-        Employee(10, "ກິນ", "春"),
-        Employee(11, "ຄົງ", "研"),
-        Employee(12, "ມົວ", "罗")
+        Employee(1, "ແຫນ", "盘"),
+        Employee(2, "ນ້ອຍ", "姆"),
+        Employee(3, "ນົວ", "松"),
+        Employee(4, "ບາ", "巴"),
+        Employee(5, "ເອົາ", "糖"),
+        Employee(6, "ແກ້ວ", "乐昂"),
+        Employee(7, "ອິ", "文"),
+        Employee(8, "ຕົວ", "米"),
+        Employee(9, "ແພງ", "挽"),
+        Employee(10, "ຄຳ", "春"),
+        Employee(11, "ແນນ", "研"),
+        Employee(12, "ດາວ", "孙"),
+        Employee(13, "ຕາວ", "罗")
     )
 
     private fun sp(c: Context): SharedPreferences =

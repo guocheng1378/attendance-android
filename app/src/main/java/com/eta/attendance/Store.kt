@@ -115,6 +115,34 @@ object AttendanceStore {
         return sb.toString()
     }
 
+    /** 导出全量备份 JSON */
+    fun exportBackup(c: Context): String {
+        val arr = JSONArray()
+        all(c).forEach { r ->
+            arr.put(JSONObject().apply {
+                put("employeeId", r.employeeId); put("date", r.date)
+                put("status", r.status.name); put("checkInTime", r.checkInTime); put("late", r.late)
+            })
+        }
+        return JSONObject().apply {
+            put("version", 1); put("exportedAt", today()); put("records", arr)
+        }.toString()
+    }
+
+    /** 导入备份：同员工同天覆盖，返回条数 */
+    fun importBackup(c: Context, json: String): Int {
+        val arr = JSONObject(json).optJSONArray("records") ?: JSONArray()
+        val list = all(c); var n = 0
+        for (i in 0 until arr.length()) {
+            val o = arr.getJSONObject(i)
+            val rec = AttendanceRecord(o.getInt("employeeId"), o.getString("date"),
+                Status.valueOf(o.getString("status")), o.optString("checkInTime"), o.optBoolean("late"))
+            list.removeAll { it.employeeId == rec.employeeId && it.date == rec.date }
+            list.add(rec); n++
+        }
+        saveAll(c, list); return n
+    }
+
     /** 推送到 Supabase（upsert）。失败静默返回 false。 */
     suspend fun pushToSupabase(c: Context): Boolean {
         if (!Config.cloudEnabled(c)) return false
