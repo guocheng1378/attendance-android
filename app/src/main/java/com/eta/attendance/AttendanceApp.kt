@@ -67,17 +67,14 @@ private fun AttendanceScreen() {
     val c = LocalAppColors.current
     // 背景专用 backdrop：只录制 GlassBackground（不含面板），供卡片/底栏采样 → 打破自引用递归
     val backdropBg = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
-    // 主层 backdrop：录制 背景+内容，仅用于本层绘制，不被任何卡片采样
-    val backdropMain = rememberLayerBackdrop { drawRect(c.glassFill); drawContent() }
     Column(Modifier.fillMaxSize()) {
-        // 内容区：占满除底栏外的全部高度（weight 而非 Box.align，避免底栏浮到顶端）
+        // 内容区：占满除底栏外的全部高度（weight 而非 Box.align，确保底栏稳居底部）
         Box(Modifier.fillMaxWidth().weight(1f)) {
-            // 主层：背景+内容同处一个 layerBackdrop 盒内就地绘制
-            Box(Modifier.fillMaxSize().layerBackdrop(backdropMain)) {
-            // 仅把背景录进 backdropBg：卡片采样它、而它不含面板本身 → 不递归
+            // 背景渐变（同时录进 backdropBg，供面板磨砂采样）
             Box(Modifier.fillMaxSize().layerBackdrop(backdropBg)) {
                 GlassBackground()
             }
+            // 内容绘制在背景之上；面板采样 backdropBg（仅背景、不含面板本身 → 不递归）
             CompositionLocalProvider(LocalBackdrop provides backdropBg) {
                 NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
                     entry<Route.CheckIn> { CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }) }
@@ -87,13 +84,13 @@ private fun AttendanceScreen() {
                 }
             }
         }
-        }
-        // 底栏：作为 Column 第二项，固定高度、稳居底部
+        // 底栏：Column 第二项，固定高度、稳居底部
         Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).safeDrawingPadding()) {
             BottomNavBar(navController, backdropBg)
         }
     }
 }
+
 
 
 // ===================== 签到页 =====================
