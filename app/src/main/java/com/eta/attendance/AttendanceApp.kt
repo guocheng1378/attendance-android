@@ -370,9 +370,9 @@ private fun GlassCard(
 @Composable
 private fun GlassButton(
     text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
     primary: Boolean = false,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
     val shape = RoundedCornerShape(15.dp)
     val interactionSource = remember { MutableInteractionSource() }
