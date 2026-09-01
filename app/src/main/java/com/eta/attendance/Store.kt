@@ -319,14 +319,20 @@ object AttendanceStore {
         return base + "/" + (dirs + fileName).joinToString("/")
     }
 
-    /** 逐级 MKCOL 创建父文件夹；已存在(405/204)或新建(201)都继续，认证失败则返回错误。 */
+    /**
+     * 逐级 MKCOL 创建 base 之下、文件名之上的目录。
+     * 坚果云对共享根 /dav/ 的 MKCOL 会返回 403，故跳过 base 段；除 401 认证错误外其它码都继续，最终由 PUT 判定。
+     */
     private fun ensureParentFolders(c: Context): DavResult? {
         val uri = runCatching { URI(davFullUrl(c)) }.getOrNull() ?: return null
         val scheme = uri.scheme ?: return null
         val authority = uri.authority ?: return null
+        val baseSegs = (runCatching { URI(Config.davUrl(c).trim()).rawPath }.getOrNull() ?: "")
+            .split('/').filter { it.isNotBlank() }
         val dirSegs = (uri.rawPath ?: "").split('/').filter { it.isNotBlank() }.dropLast(1)
-        var acc = ""
-        for (seg in dirSegs) {
+        val toCreate = if (dirSegs.size > baseSegs.size) dirSegs.subList(baseSegs.size, dirSegs.size) else emptyList()
+        var acc = if (baseSegs.isEmpty()) "" else "/" + baseSegs.joinToString("/")
+        for (seg in toCreate) {
             acc += "/" + seg
             val mkUrl = "$scheme://$authority$acc/"
             val req = Request.Builder().url(mkUrl)
@@ -335,7 +341,7 @@ object AttendanceStore {
                 .build()
             val code = runCatching { client.newCall(req).execute().use { it.code } }
                 .getOrElse { return DavResult(false, -1, "网络错误：${it.message}") }
-            if (code == 401 || code == 403) return DavResult(false, code, davHint(code))
+            if (code == 401) return DavResult(false, 401, davHint(401))
         }
         return null
     }
