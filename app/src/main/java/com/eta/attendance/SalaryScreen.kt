@@ -134,7 +134,10 @@ internal fun SalaryPanel2() {
                 }
                 Spacer(Modifier.height(8.dp))
                 SumRow(stringResource(R.string.sp_monthly), "${k(p.monthly)} LAK")
+                // 日薪 =（月薪+奖金）÷ 当月天数，奖金摊在里面，不另计一笔相加
                 SumRow(stringResource(R.string.sp_bonus), "${k(p.bonus)} LAK")
+                SumRow(stringResource(R.string.sp_daily_rate), "${Math.round(p.dailyRate)} LAK")
+                SumRow(stringResource(R.string.sp_gross), "${k(p.gross)} LAK")
                 if (p.penaltyDays > 0) SumRow(stringResource(R.string.sp_penalty_fmt, p.penaltyDays), "-${k(p.penalty)} LAK", neg = true)
                 // 应发为负 = 预支超出应发（欠款），用 error 色标出，不静默显示负数
                 SumRow(stringResource(R.string.sp_payable), "${k(p.payable)} LAK", error = p.payable < 0)

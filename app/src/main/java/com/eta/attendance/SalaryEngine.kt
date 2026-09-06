@@ -28,12 +28,12 @@ data class MonthPay(
 
 /**
  * 工资计算引擎（参考 attendance-tracker 并按需求调整）：
- *  - 日薪 = 月薪 ÷ 应出勤天数（满勤即满薪；不按自然月天数摊）。
- *  - 应出勤天数 = 当月总天数 - 全员没来天数 - FREE_DAYS(2)，最少 1 天。
+ *  - 日薪 = (月薪 + 奖金) ÷ 当月天数；奖金已摊进日薪，不再单独另加。
+ *  - 应出勤天数 = 当月总天数 - 全员没来天数 - FREE_DAYS(2)，最少 1 天；只用于扣减阈值判定，不参与日薪。
  *  - 出勤折算 = 全天×1 + 半天×0.5。
  *  - 出勤 < 应出勤÷2 → 扣 2 天工资；出勤 < 应出勤 → 扣 1 天工资；否则不扣。
- *  - 扣减 = 日薪 × 扣减天数（日薪按应出勤摊，故扣一天 = 月薪 ÷ 应出勤）。
- *  - gross（应发前额）= round千( min(出勤折算, 应出勤) × 日薪 + 奖金 )；奖金固定发放、不摊不折，只在总和上取整一次。
+ *  - 扣减 = 日薪 × 扣减天数（与日薪同口径，同样含奖金）。
+ *  - gross（出勤工资）= round千( min(出勤折算, 当月天数) × 日薪 )；min 是脏数据护栏，同时保证 gross 不超过 月薪+奖金。
  *  - net（实发，界面「实发合计」）= max(gross - 扣减, 0) = 当月总收款。
  *  - payable（应发，界面「应发合计」）= net - 预支，允许为负（负数 = 预支超出，即欠款）。
  *  - gross / 扣减 / 预支 各自按千位取整后再相减，差值天然对齐，不再重复取整。
@@ -70,21 +70,20 @@ object SalaryEngine {
         closureDays: Int = 0,
     ): MonthPay {
         val dim = daysInMonth(ym)                     // 非法 ym 直接抛出，由上层捕获标红
-        val expected = (dim - closureDays - FREE_DAYS).coerceAtLeast(1)
+        val expected = (dim - closureDays - FREE_DAYS).coerceAtLeast(1)   // 仅用于扣减阈值判定
         val monthly = emp.monthlyBase
         val bonus = emp.bonus
         val attend = full + half * 0.5
-        val rate = monthly / expected                 // 日薪按应出勤摊：满勤即满薪
+        val rate = (monthly + bonus) / dim            // 日薪含奖金，按当月自然天数摊
         val penaltyDays = when {
             attend < expected / 2.0 -> 2
             attend < expected -> 1
             else -> 0
         }
-        // 奖金固定发放（不摊不折）；coerceAtMost 防超勤超发。
-        // 只在「出勤工资 + 奖金」这个总和上做一次性千位取整：既保证 gross 恒为 1000 的倍数
-        // （非千位整数倍的奖金不会破坏与 penalty/advance 的差值对齐），又避免二次取整在
-        // .5 边界上多算或少算一个千位。
-        val gross = roundKip(attend.coerceAtMost(expected.toDouble()) * rate + bonus)
+        // 奖金已摊入 rate，gross 只表示出勤工资。min(attend, dim) 是脏数据护栏（30 天的月不可能出勤 31 天），
+        // 同时保证 gross 恒不超过 月薪 + 奖金。只在这个乘积上做一次性千位取整：既保证 gross 恒为 1000 的倍数
+        // （非千位整数倍的日薪不会破坏与 penalty/advance 的差值对齐），又避免二次取整在 .5 边界上多算或少算一个千位。
+        val gross = roundKip(minOf(attend, dim.toDouble()) * rate)
         val penalty = roundKip(rate * penaltyDays)
         val advanceR = roundKip(advance)
         // gross / penalty / advanceR 都已是 1000 的倍数，差值天然对齐，不再重复取整

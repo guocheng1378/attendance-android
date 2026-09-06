@@ -71,7 +71,7 @@
 
     <!-- 设置 - 工资 -->
     <string name="employee_salary">员工薪资</string>
-    <string name="employee_salary_desc">日薪/月薪（基普）；月薪>0 时优先按月薪折算</string>
+    <string name="employee_salary_desc">月薪 / 奖金（基普）；日薪由系统按（月薪+奖金）÷当月天数自动折算，不需单独填</string>
     <string name="field_monthly_base">月薪</string>
     <string name="field_bonus">奖金</string>
     <string name="save_employee_salary">保存员工薪资</string>
@@ -125,7 +125,9 @@
     <string name="sp_attend_fmt">出勤 %1$s / 应出勤 %2$d 天（%3$d全 %4$d半 %5$d缺）</string>
     <string name="sp_net_lak">实发 LAK</string>
     <string name="sp_monthly">月薪</string>
-    <string name="sp_bonus">奖金</string>
+    <string name="sp_bonus">奖金（已摊入日薪）</string>
+    <string name="sp_daily_rate">日薪（含奖金）</string>
+    <string name="sp_gross">出勤工资</string>
     <string name="sp_penalty_fmt">扣减（%d 天）</string>
     <string name="sp_payable">应发</string>
     <string name="sp_advance_hint">预支 (LAK)</string>
@@ -133,16 +135,16 @@
     <string name="sp_export_csv">导出本月工资 CSV</string>
     <string name="sp_exported_fmt">已导出 %1$s</string>
     <string name="sp_ym_fmt">%1$s年%2$s月</string>
-    <string name="sp_rule">规则：一天工资=月薪÷应出勤天数；应出勤=当月天数−全员没来−2；出勤折算=全天×1+半天×0.5；出勤&lt;应出勤扣1天、&lt;应出勤÷2扣2天；奖金固定发放不折算；应发=出勤×日薪+奖金−扣减−预支；实发=应发+预支（当月总收款）。</string>
+    <string name="sp_rule">规则：一天工资=（月薪+奖金）÷当月天数；应出勤=当月天数−全员没来−2（只用于判定扣减，不参与摊薪）；出勤折算=全天×1+半天×0.5；出勤&lt;应出勤扣1天、&lt;应出勤÷2扣2天；奖金已摊入日薪，不再另加；应发=出勤×日薪−扣减−预支；实发=应发+预支（当月总收款）。</string>
     <string name="cancel">取消</string>
     <string name="confirm">确定</string>
     <string name="pay_rule_title">工资规则</string>
-    <string name="prl_base">• 计薪基数 = 月薪 + 奖金（奖金固定发放，不按出勤折算）</string>
-    <string name="prl_expect">• 应出勤天数 = 当月总天数 − 全员没来 − 2</string>
+    <string name="prl_base">• 计薪基数 = 月薪 + 奖金（奖金摊入日薪，不再单独相加）</string>
+    <string name="prl_expect">• 应出勤天数 = 当月总天数 − 全员没来 − 2（只用于判定是否扣减，不参与摊薪）</string>
     <string name="prl_attend">• 出勤折算 = 全天×1 + 半天×0.5</string>
-    <string name="prl_pen">• 出勤 &lt; 应出勤：扣 1 天工资；出勤 &lt; 应出勤÷2：扣 2 天工资</string>
-    <string name="prl_rate">• 一天工资 = 月薪 ÷ 应出勤天数（满勤即满薪）</string>
-    <string name="prl_net">• 应发 = 出勤×日薪 + 奖金 − 扣减 − 预支；实发 = 应发 + 预支（当月总收款）</string>
+    <string name="prl_pen">• 出勤 &lt; 应出勤：扣 1 天工资；出勤 &lt; 应出勤÷2：扣 2 天工资（扣的单价与日薪相同，含奖金）</string>
+    <string name="prl_rate">• 一天工资 =（月薪 + 奖金）÷ 当月天数（满勤不一定满薪；出勤折算封顶在当月天数）</string>
+    <string name="prl_net">• 应发 = 出勤×日薪 − 扣减 − 预支；实发 = 应发 + 预支（当月总收款）</string>
     <string name="late_tag">迟</string>
     <string name="del_emp_confirm_fmt">确定删除员工「%1$s」？其历史考勤保留，但该员工编号将被永久占用，不会分配给新人。</string>
     <string name="csv_header">月份,姓名,应出勤,全天,半天,缺勤,折算出勤,日薪,月薪,奖金,扣减天数,扣减金额,预支,应发,实发,备注</string>

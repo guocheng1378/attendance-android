@@ -71,7 +71,7 @@
 
     <!-- 设置 - 工资 -->
     <string name="employee_salary">ເງິນເດືອນພະນັກງານ</string>
-    <string name="employee_salary_desc">ເງິນເດືອນ/ເງິນເດືອນ (ກີບ); ເງິນເດືອນ>0 ຄິດຕາມເງິນເດືອນ</string>
+    <string name="employee_salary_desc">ເງິນເດືອນ / ໂບນັດ (ກີບ); ເງິນມື້ = (ເງິນເດືອນ + ໂບນັດ) ÷ ຈຳນວນມື້ໃນເດືອນ ຄິດໄລ່ອັດຕະໂນມັດ</string>
     <string name="field_monthly_base">ເງິນເດືອນ</string>
     <string name="field_bonus">ໂບນັດ</string>
     <string name="save_employee_salary">ບັນທຶກເງິນເດືອນ</string>
@@ -125,7 +125,9 @@
     <string name="sp_attend_fmt">ເຂົ້າວຽກ %1$s / ຄວນເຂົ້າ %2$d ມື້ (%3$d ເຕັມ %4$d ຄ້າງ %5$d ບໍ່ມາ)</string>
     <string name="sp_net_lak">ຈ່າຍຈິງ LAK</string>
     <string name="sp_monthly">ເງິນເດືອນ</string>
-    <string name="sp_bonus">ໂບນັດ</string>
+    <string name="sp_bonus">ໂບນັດ (ຮວມໃນເງິນມື້)</string>
+    <string name="sp_daily_rate">ເງິນມື້ (ຮວມໂບນັດ)</string>
+    <string name="sp_gross">ເງິນເຂົ້າວຽກ</string>
     <string name="sp_penalty_fmt">ຫັກ (%d ມື້)</string>
     <string name="sp_payable">ຄວນຈ່າຍ</string>
     <string name="sp_advance_hint">ເງິນກູ້ (LAK)</string>
@@ -133,16 +135,16 @@
     <string name="sp_export_csv">ສົ່ງອອກເງິນເດືອນເດືອນນີ້ CSV</string>
     <string name="sp_exported_fmt">ສົ່ງອອກ %1$s ແລ້ວ</string>
     <string name="sp_ym_fmt">%1$s/%2$s</string>
-    <string name="sp_rule">ກົດເກນ: ເງິນມື້=ເງິນເດືອນ÷ມື້ຄວນເຂົ້າ; ມື້ຄວນເຂົ້າ=ຈຳນວນມື້−ມື້ບໍ່ມາທຸກຄົນ−2; ນັບເຂົ້າວຽກ=ເຕັມ×1+ຄ້າງ×0.5; ເຂົ້າ&lt;ຄວນເຂົ້າ ຫັກ 1 ມື້, &lt;ຄວນເຂົ້າ÷2 ຫັກ 2 ມື້; ໂບນັດຈ່າຍຄົງທີ່ບໍ່ຫັກ; ຄວນຈ່າຍ=ເຂົ້າ×ເງິນມື້+ໂບນັດ−ຫັກ−ເງິນກູ້; ຈ່າຍຈິງ=ຄວນຈ່າຍ+ເງິນກູ້ (ຍອດຮັບທັງເດືອນ).</string>
+    <string name="sp_rule">ກົດເກນ: ເງິນມື້=(ເງິນເດືອນ+ໂບນັດ)÷ຈຳນວນມື້ໃນເດືອນ; ມື້ຄວນເຂົ້າ=ຈຳນວນມື້−ມື້ບໍ່ມາທຸກຄົນ−2 (ໃຊ້ກວດຫັກ); ນັບເຂົ້າວຽກ=ເຕັມ×1+ຄ້າງ×0.5; ເຂົ້າ&lt;ຄວນເຂົ້າ ຫັກ 1 ມື້, &lt;ຄວນເຂົ້າ÷2 ຫັກ 2 ມື້; ໂບນັດຮວມໃນເງິນມື້ ບໍ່ເພີ່ມອີກ; ຄວນຈ່າຍ=ເຂົ້າ×ເງິນມື້−ຫັກ−ເງິນກູ້; ຈ່າຍຈິງ=ຄວນຈ່າຍ+ເງິນກູ້ (ຍອດຮັບທັງເດືອນ).</string>
     <string name="cancel">ຍົກເລີກ</string>
     <string name="confirm">ຢືນຢັນ</string>
     <string name="pay_rule_title">ກົດເກນເງິນເດືອນ</string>
-    <string name="prl_base">• ຖານຄິດໄລ່ = ເງິນເດືອນ + ໂບນັດ (ໂບນັດຈ່າຍຄົງທີ່ ບໍ່ຄິດໄລ່ຕາມການເຂົ້າວຽກ)</string>
-    <string name="prl_expect">• ມື້ຄວນເຂົ້າ = ຈຳນວນມື້ໃນເດືອນ − ມື້ບໍ່ມາທຸກຄົນ − 2</string>
+    <string name="prl_base">• ຖານຄິດໄລ່ = ເງິນເດືອນ + ໂບນັດ (ໂບນັດຮວມໃນເງິນມື້, ບໍ່ເພີ່ມອີກ)</string>
+    <string name="prl_expect">• ມື້ຄວນເຂົ້າ = ຈຳນວນມື້ໃນເດືອນ − ມື້ບໍ່ມາທຸກຄົນ − 2 (ໃຊ້ກວດຫັກ, ບໍ່ຄິດໄລ່ເງິນມື້)</string>
     <string name="prl_attend">• ນັບເຂົ້າວຽກ = ເຕັມ×1 + ຄ້າງ×0.5</string>
-    <string name="prl_pen">• ເຂົ້າ &lt; ຄວນເຂົ້າ: ຫັກ 1 ມື້; ເຂົ້າ &lt; ຄວນເຂົ້າ÷2: ຫັກ 2 ມື້</string>
-    <string name="prl_rate">• ເງິນມື້ = ເງິນເດືອນ ÷ ມື້ຄວນເຂົ້າ (ເຂົ້າຄົບ = ເງິນເຕັມ)</string>
-    <string name="prl_net">• ຄວນຈ່າຍ = ເຂົ້າ×ເງິນມື້ + ໂບນັດ − ຫັກ − ເງິນກູ້; ຈ່າຍຈິງ = ຄວນຈ່າຍ + ເງິນກູ້ (ຍອດຮັບທັງເດືອນ)</string>
+    <string name="prl_pen">• ເຂົ້າ &lt; ຄວນເຂົ້າ: ຫັກ 1 ມື້; ເຂົ້າ &lt; ຄວນເຂົ້າ÷2: ຫັກ 2 ມື້ (ຈ່າຍຫັກ = ເງິນມື້ຮວມໂບນັດ)</string>
+    <string name="prl_rate">• ເງິນມື້ = (ເງິນເດືອນ + ໂບນັດ) ÷ ຈຳນວນມື້ໃນເດືອນ (ນັບຕາມຈຳນວນມື້ໃນເດືອນ, ບໍ່ຕາມມື້ຄວນເຂົ້າ)</string>
+    <string name="prl_net">• ຄວນຈ່າຍ = ເຂົ້າ×ເງິນມື້ − ຫັກ − ເງິນກູ້; ຈ່າຍຈິງ = ຄວນຈ່າຍ + ເງິນກູ້ (ຍອດຮັບທັງເດືອນ)</string>
     <string name="late_tag">ສາ</string>
     <string name="del_emp_confirm_fmt">ລຶບນາຍເຖົ້າ "%1$s"? ບັນທຶກເກົ່າຍັງເຫຼືອ, ແຕ່ເລກລຳດັບນີ້ຈະຖືກຈອງຖາວອນ.</string>
     <string name="csv_header">ເດືອນ,ຊື່,ຄວນເຂົ້າ,ເຕັມ,ຄ້າງ,ຂາດ,ນັບເຂົ້າວຽກ,ເງິນມື້,ເງິນເດືອນ,ໂບນັດ,ມື້ຫັກ,ຈຳນວນຫັກ,ເງິນກູ້,ຄວນຈ່າຍ,ຈ່າຍຈິງ,ໝາຍເຫດ</string>
