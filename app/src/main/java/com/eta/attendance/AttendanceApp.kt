@@ -94,7 +94,19 @@ private fun AttendanceScreen() {
                     .then(contentBg?.let { Modifier.layerBackdrop(it) } ?: Modifier)
             ) {
                 CompositionLocalProvider(LocalBackdrop provides backdropBg) {
-                    NavDisplay(navController = navController, modifier = Modifier.fillMaxSize()) {
+                    // 状态栏 inset 只能加在这里，不能加进各个页面内部：每个页面的根 Column 都是
+                    // Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)...)
+                    // （CheckInPanel / StatsPanel / SettingsPanel 与 SalaryScreen.kt 的 SalaryPanel2），那个 padding
+                    // 排在 verticalScroll 之后，页面内部再加的 inset 会跟着内容一起被滚走，所以状态栏
+                    // 这条 inset 必须加在滚动容器的外面。这里也只消费 TOP 一条边：底部 navigationBars
+                    // inset 已由导航条组件内部的 bottomPaddingValue 处理，整列再套 safeDrawingPadding()
+                    // 会把它算两遍。
+                    NavDisplay(
+                        navController = navController,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = WindowInsets.safeDrawing.only(WindowInsetsSides.Top).asPaddingValues().calculateTopPadding()),
+                    ) {
                         entry<Route.CheckIn> {
                             // 只有栈顶（未被 Settings 等页面盖住）时才让签到页计时器继续刷新
                             val atTop = navController.backStack.lastOrNull() == Route.CheckIn
@@ -107,8 +119,9 @@ private fun AttendanceScreen() {
                 }
             }
             // 左右 24dp 与底部安全区由 IosLiquidGlassNavigationBar 内部处理（组件自己读
-            // navigationBars inset，见 LiquidGlassNavigationBar.kt 的 bottomPaddingValue），
-            // 这里只加模板同款 16dp 悬浮间距，否则导航条 inset 会被算两次。
+            // navigationBars inset，见 LiquidGlassNavigationBar.kt 的 bottomPaddingValue =
+            // 8.dp + navBarBottomPadding）。这里的 16dp 是模板同款的悬浮间距，与组件内部那段
+            // 8dp + inset 是两笔相加的间距，各自独立生效，不存在把 inset 算两次的问题。
             Box(
                 Modifier
                     .fillMaxWidth()

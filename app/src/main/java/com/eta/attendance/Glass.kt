@@ -38,7 +38,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -350,11 +349,13 @@ internal fun StatusChip(label: String, selected: Boolean, onClick: () -> Unit) {
 /**
  * 悬浮液态玻璃底部导航：改用成品组件 [IosLiquidGlassNavigationBar]
  * （`component/liquid/`，改编 Kyant0/AndroidLiquidGlass，Apache-2.0），
- * 不再手写 textureBlur + 滑动胶囊。外层 Box 按 skill 的 app-wiring 写法采样
- * [backdrop]（RectangleShape + blurRadius 25f + surface 0.8f 混合色）。
+ * 不再手写 textureBlur + 滑动胶囊。外层 Box 只是一个纯布局容器，不再采样 [backdrop]：
+ * 所有磨砂、压暗与染色都在胶囊自身的圆角形状内完成（组件内部的 drawBackdrop）。
+ * 此前外层那圈全宽矩形的 textureBlur 已移除——它比胶囊更宽也更高（胶囊左右各缩进
+ * 24dp），浅色主题下会在底栏周围画出一条近白色的横带。
  *
  * [backdrop] 由**调用方**注册在内容的兄弟层上（AttendanceScreen 里含 NavDisplay 的
- * 那个 Box），底栏自己只采样不注册——同一个 LayerBackdrop 若被祖先节点 `layerBackdrop`
+ * 那个 Box），胶囊自己只采样不注册——同一个 LayerBackdrop 若被祖先节点 `layerBackdrop`
  * 注册、又被其后代 `textureBlur` 采样，会在 Android 上形成 RenderNode 父子环，
  * prepareTree 无限递归直接 native 崩溃。[isBlurActive] 即 `backdrop != null`
  * （无 RuntimeShader 时调用方传 null，组件走无模糊降级）。
@@ -382,22 +383,7 @@ internal fun BottomNavBar(
     val onSelect: (Int) -> Unit = remember(navController, routes) {
         { idx: Int -> navController.replace(routes[idx]) }
     }
-    Box(
-        Modifier.fillMaxWidth().then(
-            backdrop?.let {
-                Modifier.textureBlur(
-                    backdrop = it,
-                    shape = RectangleShape,
-                    blurRadius = 25f,
-                    colors = BlurDefaults.blurColors(
-                        blendColors = listOf(
-                            BlendColorEntry(MiuixTheme.colorScheme.surface.copy(alpha = 0.8f)),
-                        ),
-                    ),
-                )
-            } ?: Modifier
-        )
-    ) {
+    Box(Modifier.fillMaxWidth()) {
         IosLiquidGlassNavigationBar(
             items = items,
             selectedIndex = selectedTab,

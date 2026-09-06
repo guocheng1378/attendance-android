@@ -306,13 +306,17 @@ fun IosLiquidGlassNavigationBar(
     val interactiveHighlight = remember(animationScope, isLtr, dampedDrag) {
         InteractiveHighlight(
             animationScope = animationScope,
-            position = { layerSize, _ ->
+            // 光斑改为「手指主导、tab 指示器居中位置兜底」：offset 为手指在节点本地的坐标，
+            // anchorX 是原来的 tab 锚点。lerp 的权重 0.6f 是实机手感调节旋钮（建议区间 0.3~0.7，
+            // 越大越跟手）。松手后光斑弹回按下点。y 仍固定在图层中线——药丸只有 64dp 高，纵向跟随没有意义。
+            position = { layerSize, offset ->
+                val anchorX = if (isLtr) {
+                    (dampedDrag.value + 0.5f) * tabWidthPx + panelOffset
+                } else {
+                    layerSize.width - (dampedDrag.value + 0.5f) * tabWidthPx + panelOffset
+                }
                 Offset(
-                    x = if (isLtr) {
-                        (dampedDrag.value + 0.5f) * tabWidthPx + panelOffset
-                    } else {
-                        layerSize.width - (dampedDrag.value + 0.5f) * tabWidthPx + panelOffset
-                    },
+                    x = lerp(anchorX, offset.x, 0.6f),
                     y = layerSize.height / 2f,
                 )
             },
