@@ -94,14 +94,3 @@ dependencies {
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     testImplementation("junit:junit:4.13.2")
 }
-
-// 让 CI 日志逐条打印用例结果，用于确认回归测试真的执行了（而不是任务空跑绿）。
-tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
-    testLogging {
-        events(
-            org.gradle.api.tasks.testing.TestResult.Passed,
-            org.gradle.api.tasks.testing.TestResult.Failed,
-            org.gradle.api.tasks.testing.TestResult.Skipped,
-        )
-    }
-}

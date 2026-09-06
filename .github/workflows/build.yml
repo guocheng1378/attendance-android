@@ -39,6 +39,35 @@ jobs:
       - name: 单元测试（工资引擎口径回归）
         run: ./gradlew testDebugUnitTest --no-daemon --stacktrace
 
+      # 读 JUnit XML 报告，确认回归用例真的执行了多少条（而不是任务空跑绿）。
+      # 不依赖 Gradle 侧 testLogging 配置，避免 DSL 版本差异导致构建失败。
+      - name: 打印用例执行明细
+        if: always()
+        run: |
+          DIR=app/build/test-results/testDebugUnitTest
+          if [ ! -d "$DIR" ]; then
+            echo "::error::未找到测试报告目录 $DIR"
+            exit 1
+          fi
+          python3 - "$DIR" <<'PY'
+          import glob, sys, xml.etree.ElementTree as ET
+          files = sorted(glob.glob(sys.argv[1] + "/TEST-*.xml"))
+          if not files:
+              print("::error::报告目录为空，测试未执行")
+              sys.exit(1)
+          t = f = e = s = 0
+          for p in files:
+              r = ET.parse(p).getroot()
+              g = lambda k: int(float(r.get(k, 0)))
+              t += g("tests"); f += g("failures"); e += g("errors"); s += g("skipped")
+              print("  %s: tests=%d failures=%d errors=%d skipped=%d time=%ss"
+                    % (r.get("name"), g("tests"), g("failures"), g("errors"), g("skipped"), r.get("time")))
+          print("TOTAL tests=%d failures=%d errors=%d skipped=%d passed=%d" % (t, f, e, s, t - f - e - s))
+          if t == 0 or f or e:
+              print("::error::回归用例未真正通过")
+              sys.exit(1)
+          PY
+
       - name: 编译 Debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
