@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -88,49 +89,70 @@ private fun AttendanceScreen() {
         Box(Modifier.fillMaxSize().layerBackdrop(backdropBg)) {
             GlassBackground()
         }
-        Column(Modifier.fillMaxSize()) {
-            Box(
-                Modifier.fillMaxWidth().weight(1f)
-                    .then(contentBg?.let { Modifier.layerBackdrop(it) } ?: Modifier)
-            ) {
-                CompositionLocalProvider(LocalBackdrop provides backdropBg) {
-                    // 状态栏 inset 只能加在这里，不能加进各个页面内部：每个页面的根 Column 都是
-                    // Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)...)
-                    // （CheckInPanel / StatsPanel / SettingsPanel 与 SalaryScreen.kt 的 SalaryPanel2），那个 padding
-                    // 排在 verticalScroll 之后，页面内部再加的 inset 会跟着内容一起被滚走，所以状态栏
-                    // 这条 inset 必须加在滚动容器的外面。这里也只消费 TOP 一条边：底部 navigationBars
-                    // inset 已由导航条组件内部的 bottomPaddingValue 处理，整列再套 safeDrawingPadding()
-                    // 会把它算两遍。
-                    NavDisplay(
-                        navController = navController,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = WindowInsets.safeDrawing.only(WindowInsetsSides.Top).asPaddingValues().calculateTopPadding()),
-                    ) {
-                        entry<Route.CheckIn> {
-                            // 只有栈顶（未被 Settings 等页面盖住）时才让签到页计时器继续刷新
-                            val atTop = navController.backStack.lastOrNull() == Route.CheckIn
-                            CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }, foreground = atTop)
-                        }
-                        entry<Route.Stats> { StatsPanel() }
-                        entry<Route.Salary> { SalaryPanel2() }
-                        entry<Route.Settings> { SettingsPanel() }
+        // 内容层用 fillMaxSize()：视口一直延伸到屏幕底，页面内容会从底栏背后穿过，
+        // 底栏玻璃才采得到真实像素。contentBg 仍只注册在这一层 Box 上，采样者
+        // BottomNavBar 是它的兄弟节点（理由见上面 contentBg 那段注释）。
+        Box(
+            Modifier.fillMaxSize()
+                .then(contentBg?.let { Modifier.layerBackdrop(it) } ?: Modifier)
+        ) {
+            CompositionLocalProvider(LocalBackdrop provides backdropBg) {
+                // 状态栏 inset 只能加在这里，不能加进各个页面内部：每个页面的根 Column 都是
+                // Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)...)
+                // （CheckInPanel / StatsPanel / SettingsPanel 与 SalaryScreen.kt 的 SalaryPanel2），那个 padding
+                // 排在 verticalScroll 之后，页面内部再加的 inset 会跟着内容一起被滚走，所以状态栏
+                // 这条 inset 必须加在滚动容器的外面。这里也只消费 TOP 一条边：底部 navigationBars
+                // inset 已由导航条组件内部的 bottomPaddingValue 处理，整列再套 safeDrawingPadding()
+                // 会把它算两遍。内容改为铺到屏幕底之后，各页面在滚动内容内部用
+                // navBarBottomSpace() 补一段会跟着滚的底部留白，避免最后一屏永久压在玻璃底下。
+                NavDisplay(
+                    navController = navController,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = WindowInsets.safeDrawing.only(WindowInsetsSides.Top).asPaddingValues().calculateTopPadding()),
+                ) {
+                    entry<Route.CheckIn> {
+                        // 只有栈顶（未被 Settings 等页面盖住）时才让签到页计时器继续刷新
+                        val atTop = navController.backStack.lastOrNull() == Route.CheckIn
+                        CheckInPanel(onOpenSettings = { navController.push(Route.Settings) }, foreground = atTop)
                     }
+                    entry<Route.Stats> { StatsPanel() }
+                    entry<Route.Salary> { SalaryPanel2() }
+                    entry<Route.Settings> { SettingsPanel() }
                 }
             }
-            // 左右 24dp 与底部安全区由 IosLiquidGlassNavigationBar 内部处理（组件自己读
-            // navigationBars inset，见 LiquidGlassNavigationBar.kt 的 bottomPaddingValue =
-            // 8.dp + navBarBottomPadding）。这里的 16dp 是模板同款的悬浮间距，与组件内部那段
-            // 8dp + inset 是两笔相加的间距，各自独立生效，不存在把 inset 算两次的问题。
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            ) {
-                BottomNavBar(navController, contentBg, isBlurActive = contentBg != null)
-            }
+        }
+        // 底栏浮在内容之上：align(BottomCenter) 不占布局空间，胶囊背后就是内容层。
+        // 左右 24dp 与底部安全区由 IosLiquidGlassNavigationBar 内部处理（组件自己读
+        // navigationBars inset，见 LiquidGlassNavigationBar.kt 的 bottomPaddingValue：
+        // 有 inset 时 8.dp + inset，inset 为 0 时组件兜底 36.dp）。这里的 16dp 是模板同款的悬浮
+        // 间距，与组件内部那段是两笔相加的间距，各自独立生效，不存在把 inset 算两次的问题；
+        // 组件内那段的具体数值由 navBarBottomSpace() 镜像同一套分支计算。
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp)
+        ) {
+            BottomNavBar(navController, contentBg, isBlurActive = contentBg != null)
         }
     }
+}
+
+/**
+ * 底栏实际占用的底部高度：组件外 16dp 悬浮间距 + 组件内 64dp 胶囊 + 组件内底部安全区。
+ *
+ * 最后一段必须与 LiquidGlassNavigationBar.kt 的 bottomPaddingValue 逐分支一致：有系统
+ * 导航栏 inset 时是 8.dp + inset，inset 为 0（三键导航、无手势条）时组件兜底用 36.dp。
+ * 若这里固定按 8.dp + inset 估，inset 为 0 的设备会少留 28dp，最后一屏内容被胶囊压住。
+ */
+@Composable
+internal fun navBarBottomSpace(): Dp {
+    val inset = WindowInsets.navigationBars
+        .only(WindowInsetsSides.Bottom)
+        .asPaddingValues()
+        .calculateBottomPadding()
+    return 16.dp + 64.dp + if (inset != 0.dp) 8.dp + inset else 36.dp
 }
 
 
@@ -330,7 +352,7 @@ private fun CheckInPanel(onOpenSettings: () -> Unit, foreground: Boolean = true)
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
-            .padding(bottom = 24.dp)
+            .padding(bottom = 24.dp + navBarBottomSpace())
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column {
@@ -475,7 +497,7 @@ private fun StatsPanel() {
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(16.dp).padding(bottom = 24.dp)
+            .padding(16.dp).padding(bottom = 24.dp + navBarBottomSpace())
     ) {
         Text(context.getString(R.string.month_summary), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)
         Spacer(Modifier.height(16.dp))
@@ -623,7 +645,7 @@ private fun SettingsPanel() {
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(16.dp).padding(bottom = 24.dp)
+            .padding(16.dp).padding(bottom = 24.dp + navBarBottomSpace())
     ) {
         if (sub == 0) {
             Text(context.getString(R.string.tab_settings), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)

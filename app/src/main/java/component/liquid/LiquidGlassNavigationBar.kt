@@ -206,7 +206,13 @@ fun IosLiquidGlassNavigationBar(
     val accentColor = MiuixTheme.colorScheme.primary
     val tabContentColor = MiuixTheme.colorScheme.onSurface
     val surfaceContainer = MiuixTheme.colorScheme.surfaceContainer
-    val containerColor = if (isBlurActive) surfaceContainer.copy(alpha = 0.4f) else surfaceContainer
+    val containerColor = if (isBlurActive) {
+        // 模糊层已经采到底下内容，色块再压厚就没有「融进去」的感觉了；深色下内容对比更强，给得更透。
+        surfaceContainer.copy(alpha = if (isDark) 0.25f else 0.35f)
+    } else {
+        // 无模糊降级时底栏直接叠在内容上方，实心色块像块挡板，留一点透底。
+        surfaceContainer.copy(alpha = 0.82f)
+    }
 
     val tabsBackdrop = rememberLayerBackdrop()
     val density = LocalDensity.current
@@ -275,7 +281,8 @@ fun IosLiquidGlassNavigationBar(
             },
             onDrag = { _, dragAmount ->
                 if (tabWidthPx > 0f && dragAmount.x != 0f) {
-                    updateValue(
+                    // 拖拽过程即时跟随手指（snapValue），不再用弹簧追；按下与松手回弹仍用 updateValue。
+                    snapValue(
                         (targetValue + dragAmount.x / tabWidthPx * if (isLtr) 1f else -1f)
                             .coerceIn(0f, (tabsCount - 1).toFloat()),
                     )
@@ -428,8 +435,8 @@ fun IosLiquidGlassNavigationBar(
                                         padding = maxOf(padding, 40.dp.toPx())
                                         vibrancy()
                                         blur(
-                                            4.dp.toPx(),
-                                            4.dp.toPx(),
+                                            10.dp.toPx(),
+                                            10.dp.toPx(),
                                         )
                                         lens(
                                             refractionHeight = 24.dp.toPx(),
@@ -480,8 +487,11 @@ fun IosLiquidGlassNavigationBar(
                                 backdrop = backdrop,
                                 shape = { pillShape },
                                 effects = {
+                                    // 与上方主胶囊 drawBackdrop 的材质参数保持一致（blur 半径同为 10dp，
+                                    // 采样外扩同为 40dp）：半径抬到 10dp 后若不外扩，边缘采样越界会出一圈暗边。
+                                    padding = maxOf(padding, 40.dp.toPx())
                                     vibrancy()
-                                    blur(4.dp.toPx(), 4.dp.toPx())
+                                    blur(10.dp.toPx(), 10.dp.toPx())
                                     lens(
                                         refractionHeight = 24.dp.toPx(),
                                         refractionAmount = 24.dp.toPx(),

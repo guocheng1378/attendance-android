@@ -71,7 +71,7 @@ internal fun SalaryPanel2() {
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(16.dp).padding(bottom = 96.dp),
+            .padding(16.dp).padding(bottom = 24.dp + navBarBottomSpace()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(stringResource(R.string.sp_title), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = c.textPrimary)

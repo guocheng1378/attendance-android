@@ -132,6 +132,21 @@ internal class DampedDragAnimation(
         }
     }
 
+    // 拖拽期间不走弹簧：updateValue 的 valueAnimationSpec 是 spring(1f, 1000f)，手指每动一下
+    // 指示器都要滞后一个弹簧时间常数去追，实机手感就是「不跟手、跟随慢」。这里直接 snapTo，
+    // 让指示器与手指 1:1。按下（onDragStarted）与松手回弹（onDragStopped）仍走 updateValue，
+    // 保留弹簧的柔顺；速度归一化方式与 updateVelocity 一致，供药丸形变读取。
+    fun snapValue(value: Float) {
+        val targetValue = value.coerceIn(valueRange)
+        velocityTracker.addPosition(nowMillis(), Offset(targetValue, 0f))
+        val span = (valueRange.endInclusive - valueRange.start).coerceAtLeast(1e-6f)
+        val targetVelocity = velocityTracker.calculateVelocity().x / span
+        animationScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            valueAnimation.snapTo(targetValue)
+            velocityAnimation.snapTo(targetVelocity)
+        }
+    }
+
     fun animateToValue(value: Float) {
         animationScope.launch {
             mutatorMutex.mutate {

@@ -168,7 +168,21 @@ internal fun rememberGlassHighlight(enabled: Boolean = true): Highlight {
     return remember(tilt) { Highlight(width = 1.1.dp, alpha = 0.9f, style = BloomStroke(color = Color.White.copy(alpha = 0.07f), innerBlurRadius = 4.dp, primaryLight = tilt, secondaryLight = LightSource(position = LightPosition(0.5f, 0.3f, -0.5f), color = Color.White.copy(alpha = 0.5f), intensity = 0.45f), dualPeak = true)) }
 }
 
-/** 动态渐变背景：随配色变化，深色下整体压暗 */
+/**
+ * 向 [other] 线性插值四个通道：[fraction] 为 0 时保持原色，为 1 时完全变成 [other]。
+ * 用于把饱和配色压向中性底，降低背景的色相强度。
+ */
+private fun Color.mixWith(other: Color, fraction: Float): Color = Color(
+    red + (other.red - red) * fraction,
+    green + (other.green - green) * fraction,
+    blue + (other.blue - blue) * fraction,
+    alpha + (other.alpha - alpha) * fraction,
+)
+
+/**
+ * 背景：非 mono 配色的三段渐变先向中性底插值 62%（只保留 38% 原色相），
+ * 呈接近纯色、微带色调的效果；彩色光斑只留极淡的色调提示，深色下整体压暗。
+ */
 @Composable
 internal fun GlassBackground() {
     val c = LocalAppColors.current
@@ -176,29 +190,31 @@ internal fun GlassBackground() {
     val dim = if (c.isDark) 0.45f else 1f
     fun d(col: Color) = col.copy(alpha = col.alpha * dim)
     val mono = p.id == "mono"
+    val neutral = if (c.isDark) Color(0xFF101216) else Color(0xFFF6F7F9)
+    fun mute(col: Color) = d(col.mixWith(neutral, 0.62f))
     val bgCols = if (mono) {
         if (c.isDark) listOf(Color(0xFF0B0B0B), Color(0xFF000000), Color(0xFF131313))
         else listOf(Color(0xFFFFFFFF), Color(0xFFF4F4F4), Color(0xFFE7E7E7))
-    } else listOf(d(p.bgTop), d(p.bgMid), d(p.bgBottom))
+    } else listOf(mute(p.bgTop), mute(p.bgMid), mute(p.bgBottom))
     Box(Modifier.fillMaxSize()) {
         Box(
             Modifier.fillMaxSize().background(Brush.verticalGradient(bgCols))
         )
         if (!mono) {
             Box(
-                Modifier.size(300.dp).align(Alignment.TopStart)
+                Modifier.size(240.dp).align(Alignment.TopStart)
                     .offset(x = (-100).dp, y = (-60).dp)
-                    .background(Brush.radialGradient(listOf(p.glowA.copy(alpha = 0.4f * dim), Color.Transparent)))
+                    .background(Brush.radialGradient(listOf(p.glowA.copy(alpha = 0.14f * dim), Color.Transparent)))
             )
             Box(
-                Modifier.size(280.dp).align(Alignment.CenterEnd)
+                Modifier.size(220.dp).align(Alignment.CenterEnd)
                     .offset(x = (-60).dp, y = (-140).dp)
-                    .background(Brush.radialGradient(listOf(p.glowB.copy(alpha = 0.33f * dim), Color.Transparent)))
+                    .background(Brush.radialGradient(listOf(p.glowB.copy(alpha = 0.10f * dim), Color.Transparent)))
             )
             Box(
-                Modifier.size(340.dp).align(Alignment.BottomStart)
+                Modifier.size(260.dp).align(Alignment.BottomStart)
                     .offset(x = (-140).dp, y = 80.dp)
-                    .background(Brush.radialGradient(listOf(p.accent.copy(alpha = 0.33f * dim), Color.Transparent)))
+                    .background(Brush.radialGradient(listOf(p.accent.copy(alpha = 0.10f * dim), Color.Transparent)))
             )
         } else {
             Box(
@@ -208,12 +224,12 @@ internal fun GlassBackground() {
         }
         Box(
             Modifier.size(180.dp).align(Alignment.CenterStart)
-                .background(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.26f * dim), Color.Transparent)))
+                .background(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.10f * dim), Color.Transparent)))
         )
     }
 }
 
-/** 液态玻璃卡片：半透明填充 + 顶部高光 + 亮边 + 悬浮阴影 */
+/** 液态玻璃卡片：半透明填充 + 弱顶部高光 + 亮边 + 轻悬浮阴影（整体压到低对比，避免卡片发白、投影过重） */
 @Composable
 internal fun GlassCard(
     modifier: Modifier = Modifier,
@@ -233,13 +249,13 @@ internal fun GlassCard(
     }
     Column(
         modifier = modifier
-            .shadow(14.dp, shape, ambientColor = Color.Black.copy(alpha = 0.10f), spotColor = Color.Black.copy(alpha = 0.22f))
+            .shadow(8.dp, shape, ambientColor = Color.Black.copy(alpha = 0.10f), spotColor = Color.Black.copy(alpha = 0.14f))
             .clip(shape)
             .then(base)
             .wrapContentHeight()
             .background(
                 Brush.verticalGradient(
-                    0f to c.glassHighlight.copy(alpha = if (c.isDark) 0.16f else 0.5f),
+                    0f to c.glassHighlight.copy(alpha = if (c.isDark) 0.08f else 0.22f),
                     0.45f to Color.Transparent
                 )
             )
@@ -268,12 +284,12 @@ internal fun GlassButton(
         modifier = modifier
             .sizeIn(minHeight = 48.dp)
             .scale(scale)
-            .shadow(8.dp, shape, spotColor = Color.Black.copy(alpha = 0.18f))
+            .shadow(8.dp, shape, spotColor = Color.Black.copy(alpha = 0.10f))
             .clip(shape)
             .background(bg)
             .background(
                 Brush.verticalGradient(
-                    0f to Color.White.copy(alpha = if (primary) 0.28f else 0.4f),
+                    0f to Color.White.copy(alpha = if (primary) 0.12f else 0.18f),
                     0.5f to Color.Transparent
                 )
             )
