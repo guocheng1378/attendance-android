@@ -12,3 +12,10 @@ local.properties
 
 # 上传产物
 *.apk
+
+# 签名密钥与口令：绝不入库（一旦提交到 public 仓库等于公开私钥，只能轮换补救）
+*.p12
+*.jks
+*.keystore
+keystore.properties
+*.keystore.properties
