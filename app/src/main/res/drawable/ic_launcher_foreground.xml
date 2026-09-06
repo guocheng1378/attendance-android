@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  启动图标前景层：打卡 = 12 点开口的时钟环 + 居中粗对勾。
+  自适应图标前景的可画区域只有居中 66×66（半径 33），超出会被系统裁掉。
+  这里最外元素是半径 24 + 半描边 2.5 = 26.5，留 6.5dp 余量。
+
+  环在 12 点留 36° 缺口：一是把「圆 + 勾」锚定成时钟/计时而不是通用认证标记，
+  二是避免用四个整点刻度——实测刻度与对勾在 r=24 的环内必然粘连（最近轴线距
+  只有 4.0dp，小于两者半描边之和 5.25），半透明描边叠在一起会糊出一道接缝。
+  环与对勾都用纯白，对勾尖端与环相切并轻微压上，同色并集不会留接缝。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 时钟环：从 -72° 顺时针绕到 -108°，12 点处留缺口，端点圆头 -->
+    <path
+        android:pathData="M61.42,31.17 A24,24 0 1 1 46.58,31.17"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round" />
+
+    <!-- 对勾：签到动作本身，也是视觉重心 -->
+    <path
+        android:pathData="M43,54.5 L51.5,63 L69,42"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>
