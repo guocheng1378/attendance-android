@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  主题图标层（Android 13+ themed icons）。开启「单色图标」后，启动器会忽略这里的
+  具体颜色、整层染成同一个色，只保留形状与 alpha，所以几何必须和前景层完全一致。
+  minSdk 33，这一层在所有目标设备上都能生效。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:pathData="M30,54 A24,24 0 1 1 78,54 A24,24 0 1 1 30,54"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="5" />
+
+    <path
+        android:pathData="M54,36 L54,32.5"
+        android:strokeColor="#B3000000"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M72,54 L75.5,54"
+        android:strokeColor="#B3000000"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M54,72 L54,75.5"
+        android:strokeColor="#B3000000"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M36,54 L32.5,54"
+        android:strokeColor="#B3000000"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+
+    <path
+        android:pathData="M43,54.5 L51.5,63 L69,42"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="7.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

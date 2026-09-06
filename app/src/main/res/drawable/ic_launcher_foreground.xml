@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  启动图标前景层：打卡 = 时钟环 + 12/3/6/9 刻度 + 居中粗对勾。
+  自适应图标前景的可画区域只有居中 66×66（半径 33），超出部分会被系统裁掉，
+  所以这里最外的元素是半径 24 + 描边 5 = 26.5 的时钟环，留足余量。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 时钟环 -->
+    <path
+        android:pathData="M30,54 A24,24 0 1 1 78,54 A24,24 0 1 1 30,54"
+        android:strokeColor="#F2FFFFFF"
+        android:strokeWidth="5" />
+
+    <!-- 四个整点刻度，用来把「圆+勾」锚定成时钟而不是普通认证标记 -->
+    <path
+        android:pathData="M54,36 L54,32.5"
+        android:strokeColor="#B8FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M72,54 L75.5,54"
+        android:strokeColor="#B8FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M54,72 L54,75.5"
+        android:strokeColor="#B8FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M36,54 L32.5,54"
+        android:strokeColor="#B8FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+
+    <!-- 对勾：签到本身 -->
+    <path
+        android:pathData="M43,54.5 L51.5,63 L69,42"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>
