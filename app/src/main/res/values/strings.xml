@@ -11,16 +11,11 @@
     <string name="save">保存记录</string>
     <string name="saved">已保存!</string>
     <string name="export_csv">导出 CSV</string>
-    <string name="no_data">暂无数据</string>
-    <string name="total">共</string>
-    <string name="workers">人</string>
     <string name="late">迟到</string>
-    <string name="early">早退</string>
     <string name="on_time">准时</string>
     <string name="today">今日</string>
     <string name="month_summary">月度考勤汇总</string>
-    <string name="detail">详细信息</string>
-    <string name="back">返回签到</string>
+    <string name="back">返回</string>
     <string name="language">界面语言</string>
     <string name="work_start">上班时间</string>
     <string name="work_end">下班时间</string>
@@ -28,12 +23,9 @@
     <string name="cloud">云端同步 (Supabase)</string>
     <string name="supabase_url">Supabase URL</string>
     <string name="supabase_key">Supabase Anon Key</string>
-    <string name="now_time">当前时间</string>
     <string name="tap_name_hint">点选姓名签到</string>
-    <string name="checkin_time">签到时间</string>
     <string name="sync_now">立即同步</string>
     <string name="synced">已同步</string>
-    <string name="sync_off">未配置云端，仅本地保存</string>
 
     <!-- 签到页 -->
     <string name="backfill_mode">补录模式</string>
@@ -78,22 +70,10 @@
     <string name="reminder_saved">已保存</string>
 
     <!-- 设置 - 工资 -->
-    <string name="pay_rules">工资规则</string>
-    <string name="expected_days">应出勤天数</string>
-    <string name="ot_rate_weekday">平日加班倍率</string>
-    <string name="ot_rate_weekend">周末加班倍率</string>
-    <string name="ot_rate_holiday">节日加班倍率</string>
-    <string name="late_deduction">每次迟到扣款(LAK)</string>
-    <string name="meal_allowance">餐补(LAK)</string>
-    <string name="transport_allowance">交通补(LAK)</string>
-    <string name="housing_allowance">住房补(LAK)</string>
-    <string name="save_pay_rules">保存工资规则</string>
     <string name="employee_salary">员工薪资</string>
-    <string name="employee_salary_desc">日薪/月薪（基普）；月薪>0 时优先按月薪折算</string>
-    <string name="field_daily_wage">日薪</string>
+    <string name="employee_salary_desc">月薪 / 奖金（基普）；日薪由系统按（月薪+奖金）÷当月天数自动折算，不需单独填</string>
     <string name="field_monthly_base">月薪</string>
     <string name="field_bonus">奖金</string>
-    <string name="field_advance">预支</string>
     <string name="save_employee_salary">保存员工薪资</string>
     <string name="add_employee">添加员工</string>
     <string name="name_lo">老挝名</string>
@@ -105,7 +85,6 @@
     <string name="data_backup">数据备份</string>
     <string name="export_backup">导出备份</string>
     <string name="import_backup">导入备份</string>
-    <string name="exported_to_download">已导出到 Download</string>
     <string name="imported_fmt">已导入 %d 条</string>
     <string name="backup_not_found">未找到备份文件</string>
     <string name="webdav_title">坚果云 / WebDAV</string>
@@ -116,10 +95,6 @@
     <string name="save_webdav">保存 WebDAV</string>
     <string name="upload_backup">上传备份</string>
     <string name="restore_from_cloud">从云端恢复</string>
-    <string name="uploaded">已上传</string>
-    <string name="upload_failed">上传失败</string>
-    <string name="restored_fmt">恢复 %d 条</string>
-    <string name="restore_failed">恢复失败</string>
     <string name="auto_backup">每日自动备份</string>
     <string name="auto_backup_desc">每天自动将考勤数据上传到 WebDAV</string>
     <string name="auto_backup_on">已开启自动备份</string>
@@ -131,32 +106,6 @@
     <string name="import_failed">导入失败</string>
 
     <!-- 薪资页 -->
-    <string name="salary_title">工资</string>
-    <string name="employee_label">员工</string>
-    <string name="ot_leave_title">加班 &amp; 请假（可选）</string>
-    <string name="ot_weekday_hint">平日加班(h)</string>
-    <string name="ot_weekend_hint">周末加班(h)</string>
-    <string name="ot_holiday_hint">节日加班(h)</string>
-    <string name="leave_sick_hint">病假(天)</string>
-    <string name="leave_personal_hint">事假(天)</string>
-    <string name="leave_annual_hint">年假(天)</string>
-    <string name="net_pay_label">实发合计</string>
-    <string name="pay_attend_days">出勤天数</string>
-    <string name="pay_base">基本工资</string>
-    <string name="pay_overtime">加班费</string>
-    <string name="pay_allowance">补贴</string>
-    <string name="pay_bonus">奖金</string>
-    <string name="pay_advance">预支</string>
-    <string name="pay_deduction">扣款</string>
-    <string name="chart_day">本月每日实发</string>
-    <string name="chart_month">本年每月实发</string>
-    <string name="chart_year">近五年实发</string>
-    <string name="no_records_in_range">该范围内暂无记录</string>
-    <string name="export_range_csv">导出本范围 CSV</string>
-    <string name="range_day">日</string>
-    <string name="range_month">月</string>
-    <string name="range_year">年</string>
-    <string name="detail_records">明细记录</string>
     <string name="month_overview_fmt">月历总览 %s</string>
 
     <!-- 提醒 -->
@@ -176,7 +125,9 @@
     <string name="sp_attend_fmt">出勤 %1$s / 应出勤 %2$d 天（%3$d全 %4$d半 %5$d缺）</string>
     <string name="sp_net_lak">实发 LAK</string>
     <string name="sp_monthly">月薪</string>
-    <string name="sp_bonus">奖金</string>
+    <string name="sp_bonus">奖金（已摊入日薪）</string>
+    <string name="sp_daily_rate">日薪（含奖金）</string>
+    <string name="sp_gross">出勤工资</string>
     <string name="sp_penalty_fmt">扣减（%d 天）</string>
     <string name="sp_payable">应发</string>
     <string name="sp_advance_hint">预支 (LAK)</string>
@@ -184,5 +135,51 @@
     <string name="sp_export_csv">导出本月工资 CSV</string>
     <string name="sp_exported_fmt">已导出 %1$s</string>
     <string name="sp_ym_fmt">%1$s年%2$s月</string>
-    <string name="sp_rule">规则：一天工资=(月薪+奖金)÷当月天数；应出勤=当月天数−全员没来−2；出勤折算=全天×1+半天×0.5；出勤&lt;应出勤扣1天、&lt;应出勤÷2扣2天；应发=出勤×日薪−扣减−预支；实发=应发+预支（当月总收款）。</string>
+    <string name="sp_rule">规则：一天工资=（月薪+奖金）÷当月天数；应出勤=当月天数−全员没来−2（只用于判定扣减，不参与摊薪）；出勤折算=全天×1+半天×0.5；出勤&lt;应出勤扣1天、&lt;应出勤÷2扣2天；奖金已摊入日薪，不再另加；应发=出勤×日薪−扣减−预支；实发=应发+预支（当月总收款）。</string>
+    <string name="cancel">取消</string>
+    <string name="confirm">确定</string>
+    <string name="pay_rule_title">工资规则</string>
+    <string name="prl_base">• 计薪基数 = 月薪 + 奖金（奖金摊入日薪，不再单独相加）</string>
+    <string name="prl_expect">• 应出勤天数 = 当月总天数 − 全员没来 − 2（只用于判定是否扣减，不参与摊薪）</string>
+    <string name="prl_attend">• 出勤折算 = 全天×1 + 半天×0.5</string>
+    <string name="prl_pen">• 出勤 &lt; 应出勤：扣 1 天工资；出勤 &lt; 应出勤÷2：扣 2 天工资（扣的单价与日薪相同，含奖金）</string>
+    <string name="prl_rate">• 一天工资 =（月薪 + 奖金）÷ 当月天数（满勤不一定满薪；出勤折算封顶在当月天数）</string>
+    <string name="prl_net">• 应发 = 出勤×日薪 − 扣减 − 预支；实发 = 应发 + 预支（当月总收款）</string>
+    <string name="late_tag">迟</string>
+    <string name="del_emp_confirm_fmt">确定删除员工「%1$s」？其历史考勤保留，但该员工编号将被永久占用，不会分配给新人。</string>
+    <string name="csv_header">月份,姓名,应出勤,全天,半天,缺勤,折算出勤,日薪,月薪,奖金,扣减天数,扣减金额,预支,应发,实发,备注</string>
+    <string name="csv_filename_fmt">工资_%1$s.csv</string>
+    <string name="dav_ok">已上传</string>
+    <string name="dav_401">WebDAV 认证失败（401）：请检查账号与坚果云应用密码</string>
+    <string name="dav_403">WebDAV 拒绝写入（403）：目标目录权限不足</string>
+    <string name="dav_404">WebDAV 路径不存在（404）：请检查完整路径</string>
+    <string name="dav_409">WebDAV 目录冲突（409）：父目录不存在或已改名</string>
+    <string name="dav_507">WebDAV 空间不足（507）</string>
+    <string name="dav_net_fmt">网络错误：%1$s</string>
+    <string name="dav_no_scheme">WebDAV 地址缺少 http:// 或 https:// 前缀</string>
+    <string name="supa_fail">Supabase 同步失败（%1$s）</string>
+    <string name="supa_not_cfg">未配置 Supabase</string>
+    <string name="notif_perm_missing">未授予通知权限，提醒不会触发</string>
+    <string name="bad_records_skipped_fmt">跳过 %1$d 条无法解析的记录</string>
+    <string name="import_conflict_fmt">云端备份时间（%1$s）早于本地，未合并。如确认要覆盖本地请再点一次。</string>
+    <string name="advance_over_fmt">预支已超过应发：%1$s</string>
+    <string name="export_dir_fail">写入备份文件失败：%1$s</string>
+    <string name="import_fail_fmt">导入失败：%1$s</string>
+    <string name="import_bad_date_fmt">%1$d 条记录日期格式非法，已忽略</string>
+    <string name="auto_backup_fail_notif">考勤自动备份失败，请在设置里检查 WebDAV 配置</string>
+    <string-array name="weekdays_short">
+        <item>日</item>
+        <item>一</item>
+        <item>二</item>
+        <item>三</item>
+        <item>四</item>
+        <item>五</item>
+        <item>六</item>
+    </string-array>
+    <string name="dav_not_cfg">未配置 WebDAV</string>
+    <string name="auto_backup_ok_notif">考勤数据已自动备份到云端</string>
+    <string name="cleared_fmt">已清除 %1$d 条记录</string>
+    <string name="unmatched_fmt">未匹配的员工：%1$s</string>
+    <string name="secure_store_fail">本机加密存储不可用，密码/密钥未保存</string>
+    <string name="emp_fallback_warn">员工名单读取失败，当前显示的是内置默认名单；请勿直接保存，否则会覆盖真实名单</string>
 </resources>

@@ -6,7 +6,9 @@
         <item name="colorOnPrimary">#FFFFFF</item>
         <item name="android:windowBackground">@drawable/bg_gradient</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@color/surface</item>
+        <!-- Activity 已调用 enableEdgeToEdge()；targetSdk 37 / Android 15+ 起 navigationBarColor 已废弃且被系统忽略，
+             这里改用透明，避免在非 edge-to-edge 的旧设备上底部出现一条白色色带 -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>

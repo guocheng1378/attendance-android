@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#5B6BF8</color>
     <!-- HyperOS 浅色界面 -->
     <color name="surface">#F4F6FF</color>
     <color name="glass_surface">#FFFFFF</color>

@@ -32,10 +32,18 @@ object Reminder {
         }
     }
 
-    fun hasPermission(context: Context): Boolean =
+    /**
+     * 是否已授予通知权限（Android 13+ 需要 POST_NOTIFICATIONS）。
+     * UI 应以此决定文案：未授予时显示 R.string.notif_perm_missing，
+     * 而不是在提醒根本不会触发的情况下仍报「已开启」。
+     */
+    fun notificationPermissionGranted(context: Context): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
+
+    /** 旧名，保留给已有调用 */
+    fun hasPermission(context: Context): Boolean = notificationPermissionGranted(context)
 
     fun schedule(context: Context) {
         ensureChannel(context)
@@ -64,7 +72,8 @@ object Reminder {
 
     fun notifyNow(context: Context, body: String) {
         ensureChannel(context)
-        if (!hasPermission(context)) return
+        // 无权限时静默返回：调用方若需提示用户，应自行查 notificationPermissionGranted
+        if (!notificationPermissionGranted(context)) return
         val n = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(context.getString(R.string.notif_title))

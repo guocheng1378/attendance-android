@@ -9,11 +9,15 @@ import androidx.compose.ui.graphics.Color
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
+import ui.LocalColorMode
 
 /** 主题模式：跟随系统 / 浅色 / 深色 */
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
-/** 一套配色：主色 + 背景三段渐变 + 强调色 + 两个光斑色 */
+/**
+ * 一套配色：主色 + 背景三段渐变 + 强调色 + 两个光斑色。
+ * [nameLo] 为老挝文显示名，放在参数表末尾并带默认值，兼容既有的位置参数构造调用。
+ */
 data class Palette(
     val id: String,
     val nameZh: String,
@@ -24,20 +28,28 @@ data class Palette(
     val accent: Color,
     val glowA: Color,
     val glowB: Color,
+    val nameLo: String = "",
 )
+
+/**
+ * 按界面语言取配色显示名。[lang] 取值同 `Config.locale`（"zh" / "lo"），
+ * 老挝文且 [Palette.nameLo] 非空时用老挝文，否则回落到中文。
+ */
+fun Palette.label(lang: String): String =
+    if (lang == "lo" && nameLo.isNotBlank()) nameLo else nameZh
 
 object Palettes {
     val ALL = listOf(
-        Palette("ocean", "海蓝", Color(0xFF3482FF), Color(0xFF3D6BFF), Color(0xFF7B5CFF), Color(0xFF2BB8FF), Color(0xFF6EA8FF), Color(0xFFFFD166), Color(0xFF90E8FF)),
-        Palette("sunset", "暖阳", Color(0xFFFF7A45), Color(0xFFFF8E53), Color(0xFFFF5C8A), Color(0xFFB14BFF), Color(0xFFFFB088), Color(0xFFFFE08A), Color(0xFFFF9EB8)),
-        Palette("forest", "青绿", Color(0xFF12B886), Color(0xFF06D6A0), Color(0xFF1FA97A), Color(0xFF3D9BFF), Color(0xFF6EE7C0), Color(0xFFD6F9E6), Color(0xFF9BE8D0)),
-        Palette("grape", "葡萄", Color(0xFF8B5CF6), Color(0xFF7B5CFF), Color(0xFFB14BFF), Color(0xFF4C6BFF), Color(0xFFB79CFF), Color(0xFFFFD1F0), Color(0xFFA0C4FF)),
-        Palette("mono", "黑白", Color(0xFFBDBDBD), Color(0xFF2B2B2B), Color(0xFF141414), Color(0xFF000000), Color(0xFFFFFFFF), Color(0xFF4A4A4A), Color(0xFF8A8A8A)),
+        Palette("ocean", "海蓝", Color(0xFF3482FF), Color(0xFF3D6BFF), Color(0xFF7B5CFF), Color(0xFF2BB8FF), Color(0xFF6EA8FF), Color(0xFFFFD166), Color(0xFF90E8FF), "ທະເລ"),
+        Palette("sunset", "暖阳", Color(0xFFFF7A45), Color(0xFFFF8E53), Color(0xFFFF5C8A), Color(0xFFB14BFF), Color(0xFFFFB088), Color(0xFFFFE08A), Color(0xFFFF9EB8), "ຕາເວັນຕົກ"),
+        Palette("forest", "青绿", Color(0xFF12B886), Color(0xFF06D6A0), Color(0xFF1FA97A), Color(0xFF3D9BFF), Color(0xFF6EE7C0), Color(0xFFD6F9E6), Color(0xFF9BE8D0), "ປ່າໄມ້"),
+        Palette("grape", "葡萄", Color(0xFF8B5CF6), Color(0xFF7B5CFF), Color(0xFFB14BFF), Color(0xFF4C6BFF), Color(0xFFB79CFF), Color(0xFFFFD1F0), Color(0xFFA0C4FF), "ໝາກອຶ"),
+        Palette("mono", "黑白", Color(0xFFBDBDBD), Color(0xFF2B2B2B), Color(0xFF141414), Color(0xFF000000), Color(0xFFFFFFFF), Color(0xFF4A4A4A), Color(0xFF8A8A8A), "ດຳຂາວ"),
     )
     fun byId(id: String): Palette = ALL.firstOrNull { it.id == id } ?: ALL[0]
 }
 
-/** 下发给玻璃/背景/文字的一组语义色 */
+/** 下发给玻璃/背景/文字/图表的一组语义色 */
 data class AppColors(
     val palette: Palette,
     val isDark: Boolean,
@@ -51,6 +63,9 @@ data class AppColors(
     val navSelected: Color,
     val chipIdle: Color,
     val chipIdleText: Color,
+    val chartBar: Color,
+    val chartBarHi: Color,
+    val chartText: Color,
 )
 
 fun buildAppColors(p: Palette, dark: Boolean): AppColors = if (dark) {
@@ -66,20 +81,27 @@ fun buildAppColors(p: Palette, dark: Boolean): AppColors = if (dark) {
         navSelected = p.accent.copy(alpha = 0.30f),
         chipIdle = Color.White.copy(alpha = 0.12f),
         chipIdleText = Color.White.copy(alpha = 0.85f),
+        chartBar = Color(0xFF6EA8FF),
+        chartBarHi = Color(0xFF3D78FF),
+        chartText = Color.White.copy(alpha = 0.85f),
     )
 } else {
     AppColors(
         palette = p, isDark = false,
         glassFill = Color.White.copy(alpha = 0.55f),
         glassFillStrong = Color.White.copy(alpha = 0.72f),
-        glassBorder = Color.White.copy(alpha = 0.72f),
-        glassHighlight = Color.White.copy(alpha = 0.9f),
+        // 浅色下白描边在白卡片上几乎不可见，改用低透明度深色描边；高光同步降对比，避免顶部一道死白
+        glassBorder = Color(0x2E1A1D2B),
+        glassHighlight = Color(0x1A1A1D2B),
         textPrimary = Color(0xCC1A1D2B),
         textSecondary = Color(0x991A1D2B),
         navFill = Color(0xEEFFFFFF),
         navSelected = p.key.copy(alpha = 0.14f),
         chipIdle = Color.White.copy(alpha = 0.5f),
         chipIdleText = Color(0xCC1A1D2B),
+        chartBar = Color(0xFF2F6FD0),
+        chartBarHi = Color(0xFF1A4FBF),
+        chartText = Color(0xCC1A1D2B),
     )
 }
 
@@ -106,8 +128,17 @@ fun AppTheme(
         ThemeController(colorMode, keyColor = palette.key)
     }
     val appColors = remember(palette, dark) { buildAppColors(palette, dark) }
+    // 供 ui.isInDarkTheme() 使用：1 强制浅色、2 强制深色、0 跟随系统（见 app/src/main/java/ui/Theme.kt）
+    val liquidColorMode = when (mode) {
+        ThemeMode.LIGHT -> 1
+        ThemeMode.DARK -> 2
+        ThemeMode.SYSTEM -> 0
+    }
     MiuixTheme(controller = controller) {
-        CompositionLocalProvider(LocalAppColors provides appColors) {
+        CompositionLocalProvider(
+            LocalAppColors provides appColors,
+            LocalColorMode provides liquidColorMode,
+        ) {
             content()
         }
     }
